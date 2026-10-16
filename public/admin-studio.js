@@ -247,12 +247,27 @@ editButtons.forEach((btn) => {
     if (!raw) return;
 
     try {
-      const post = JSON.parse(raw);
+      let post;
+      try {
+        post = JSON.parse(decodeURIComponent(escape(atob(raw))));
+      } catch (e1) {
+        try {
+          post = JSON.parse(atob(raw));
+        } catch (e2) {
+          post = JSON.parse(raw);
+        }
+      }
+
       editingSlug = post.slug;
 
       // Populate composer fields
       document.getElementById('post-title').value = post.title || '';
-      document.getElementById('post-slug').value = post.slug || '';
+      const slugField = document.getElementById('post-slug');
+      if (slugField) {
+        slugField.value = post.slug || '';
+        slugField.readOnly = true;
+        slugField.classList.add('opacity-70', 'cursor-not-allowed', 'bg-neutral-100', 'dark:bg-neutral-800');
+      }
       document.getElementById('post-excerpt').value = post.excerpt || '';
       document.getElementById('post-readtime').value = post.readTime || '6 min read';
       document.getElementById('post-image').value = post.coverImage || '';
@@ -297,6 +312,11 @@ if (btnCancelEdit) {
 function resetComposer() {
   editingSlug = null;
   document.getElementById('composer-form').reset();
+  const slugField = document.getElementById('post-slug');
+  if (slugField) {
+    slugField.readOnly = false;
+    slugField.classList.remove('opacity-70', 'cursor-not-allowed', 'bg-neutral-100', 'dark:bg-neutral-800');
+  }
   if (composerModeBadge) composerModeBadge.classList.add('hidden');
   if (submitBtnText) submitBtnText.textContent = 'Commit Directly to GitHub';
 
@@ -682,3 +702,131 @@ function showToast(title, message, isError = false) {
     }, 5000);
   }
 }
+
+// ===================================================
+// 6. GITHUB STORAGE SETTINGS & TEST CONNECTION
+// ===================================================
+const settingsForm = document.getElementById('github-settings-form');
+const btnTestConnection = document.getElementById('btn-test-connection');
+const testFeedback = document.getElementById('test-feedback');
+const testMessage = document.getElementById('test-message');
+
+function showTestStatus(isSuccess, message) {
+  if (!testFeedback || !testMessage) return;
+  testFeedback.classList.remove('hidden');
+  testMessage.textContent = message;
+
+  if (isSuccess === true) {
+    testFeedback.className =
+      'rounded-md border border-emerald-300 bg-emerald-50/70 p-3.5 text-xs text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300';
+  } else if (isSuccess === false) {
+    testFeedback.className =
+      'rounded-md border border-rose-300 bg-rose-50/70 p-3.5 text-xs text-rose-800 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300';
+  } else {
+    testFeedback.className =
+      'rounded-md border border-neutral-300 bg-neutral-100 p-3.5 text-xs text-neutral-700 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300';
+  }
+}
+
+if (btnTestConnection) {
+  btnTestConnection.addEventListener('click', async () => {
+    const owner = document.getElementById('gh-owner').value.trim();
+    const repo = document.getElementById('gh-repo').value.trim();
+    const branch = document.getElementById('gh-branch').value.trim() || 'main';
+    const token = document.getElementById('gh-token').value.trim();
+
+    if (!owner || !repo || !token) {
+      showTestStatus(false, 'Please provide GitHub Owner, Repository name, and Token before testing.');
+      return;
+    }
+
+    btnTestConnection.disabled = true;
+    btnTestConnection.innerText = 'Testing Connection...';
+    showTestStatus(null, 'Verifying GitHub credentials and repository permissions...');
+
+    try {
+      const userRes = await fetch('https://api.github.com/user', {
+        headers: {
+          Accept: 'application/vnd.github.v3+json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!userRes.ok) {
+        const err = await userRes.json().catch(() => ({}));
+        showTestStatus(false, `Authentication failed: ${err.message || 'Invalid Token'}`);
+        return;
+      }
+
+      const userData = await userRes.json();
+      const authenticatedUser = userData.login;
+
+      const repoRes = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
+        headers: {
+          Accept: 'application/vnd.github.v3+json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!repoRes.ok) {
+        const err = await repoRes.json().catch(() => ({}));
+        showTestStatus(false, `Repository error: ${err.message || 'Repository not found or access denied'}`);
+        return;
+      }
+
+      const repoData = await repoRes.json();
+      const repoOwner = repoData.owner?.login || owner;
+      const permissions = repoData.permissions || {};
+
+      const isDirectOwner = authenticatedUser.toLowerCase() === repoOwner.toLowerCase();
+      const hasAdminRights = Boolean(permissions.admin || isDirectOwner);
+
+      if (!isDirectOwner && !hasAdminRights) {
+        showTestStatus(
+          false,
+          `Connected as @${authenticatedUser}, but this repository is owned by @${repoOwner}. You are not verified as the repository owner and cannot publish, edit, or delete articles.`
+        );
+        return;
+      }
+
+      showTestStatus(
+        true,
+        `Connection verified! Authenticated as verified repo owner @${authenticatedUser} on ${repoData.full_name} (${branch} branch). Full administrative privileges confirmed.`
+      );
+    } catch (err) {
+      showTestStatus(false, `Network connection error: ${err.message}`);
+    } finally {
+      btnTestConnection.disabled = false;
+      btnTestConnection.innerText = 'Test Connection';
+    }
+  });
+}
+
+if (settingsForm) {
+  settingsForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    const owner = document.getElementById('gh-owner').value.trim();
+    const repo = document.getElementById('gh-repo').value.trim();
+    const branch = document.getElementById('gh-branch').value.trim() || 'main';
+    const pathPrefix = document.getElementById('gh-path').value.trim() || 'src/content/posts';
+    const token = document.getElementById('gh-token').value.trim();
+
+    const currentSession = getOwnerSession() || {};
+    const updatedSession = {
+      ...currentSession,
+      owner,
+      repo,
+      branch,
+      pathPrefix,
+      token,
+      isOwner: true,
+    };
+
+    localStorage.setItem('gh_owner_auth', JSON.stringify(updatedSession));
+    localStorage.setItem('gh_config', JSON.stringify(updatedSession));
+
+    showToast('Settings Saved', 'GitHub storage parameters updated successfully.');
+  });
+}
+
