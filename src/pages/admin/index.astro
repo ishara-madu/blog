@@ -235,6 +235,16 @@ import { posts, categories, authors } from '../../data/blogData';
 
         <button
           type="button"
+          id="tab-btn-author"
+          class="studio-tab text-neutral-500 hover:text-neutral-950 dark:text-neutral-400 dark:hover:text-white border-b-2 border-transparent pb-3 whitespace-nowrap transition-colors flex items-center gap-2 text-sm cursor-pointer"
+          data-target="panel-author"
+        >
+          <Icon name="user-circle" class="w-4 h-4" />
+          <span>Admin Profile</span>
+        </button>
+
+        <button
+          type="button"
           id="tab-btn-settings"
           class="studio-tab text-neutral-500 hover:text-neutral-950 dark:text-neutral-400 dark:hover:text-white border-b-2 border-transparent pb-3 whitespace-nowrap transition-colors flex items-center gap-2 text-sm cursor-pointer"
           data-target="panel-settings"
@@ -546,9 +556,19 @@ import { posts, categories, authors } from '../../data/blogData';
 
                 <!-- Author Selector -->
                 <div>
-                  <label for="post-author" class="block text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-white mb-1.5">
-                    Lead Author <span class="text-rose-500">*</span>
-                  </label>
+                  <div class="flex items-center justify-between mb-1.5">
+                    <label for="post-author" class="block text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-white">
+                      Lead Author <span class="text-rose-500">*</span>
+                    </label>
+                    <button
+                      type="button"
+                      id="btn-edit-author-inline"
+                      class="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+                    >
+                      <Icon name="pencil-simple" class="w-3.5 h-3.5" />
+                      <span>Edit My Admin Details</span>
+                    </button>
+                  </div>
                   <select
                     id="post-author"
                     required
@@ -757,6 +777,106 @@ import { posts, categories, authors } from '../../data/blogData';
             >
               <Icon name="floppy-disk" class="w-4 h-4" />
               <span>Save GitHub Settings</span>
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- TAB 4: ADMIN & AUTHOR PROFILE SETTINGS     -->
+      <!-- ========================================== -->
+      <section id="panel-author" class="studio-panel hidden space-y-8 max-w-3xl">
+        <div>
+          <h2 class="text-lg font-bold tracking-tight text-neutral-950 dark:text-white">
+            Admin & Author Profile Settings
+          </h2>
+          <p class="text-xs text-neutral-600 dark:text-neutral-300 mt-1 leading-relaxed">
+            Customize how your name, avatar, role, and bio appear in the author selector and across published blog articles.
+          </p>
+        </div>
+
+        <form id="admin-profile-form" class="space-y-5 rounded-lg border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label for="admin-name" class="block text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-white mb-1.5">
+                Display Name <span class="text-rose-500">*</span>
+              </label>
+              <input
+                type="text"
+                id="admin-name"
+                required
+                value={authors.ishara?.name || "Ishara Madushanka"}
+                class="w-full rounded-md border border-neutral-300 bg-white px-3.5 py-2 text-xs text-neutral-900 focus:border-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-950 dark:text-white"
+              />
+            </div>
+
+            <div>
+              <label for="admin-role" class="block text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-white mb-1.5">
+                Role / Title <span class="text-rose-500">*</span>
+              </label>
+              <input
+                type="text"
+                id="admin-role"
+                required
+                value={authors.ishara?.role || "Lead Publisher & Systems Architect"}
+                class="w-full rounded-md border border-neutral-300 bg-white px-3.5 py-2 text-xs text-neutral-900 focus:border-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-950 dark:text-white"
+              />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label for="admin-handle" class="block text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-white mb-1.5">
+                GitHub / Author Handle
+              </label>
+              <input
+                type="text"
+                id="admin-handle"
+                value={authors.ishara?.handle || "@ishara-madu"}
+                class="w-full rounded-md border border-neutral-300 bg-white px-3.5 py-2 text-xs text-neutral-900 focus:border-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-950 dark:text-white font-mono"
+              />
+            </div>
+
+            <div>
+              <label for="admin-avatar" class="block text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-white mb-1.5">
+                Avatar Image URL
+              </label>
+              <div class="flex items-center gap-3">
+                <img
+                  id="admin-avatar-preview"
+                  src={authors.ishara?.avatar || "/images/authors/author-ishara.jpg"}
+                  alt="Admin Avatar"
+                  class="w-8 h-8 rounded-full object-cover shrink-0 border border-neutral-200 dark:border-neutral-800"
+                />
+                <input
+                  type="text"
+                  id="admin-avatar"
+                  value={authors.ishara?.avatar || "/images/authors/author-ishara.jpg"}
+                  class="w-full rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-xs text-neutral-900 focus:border-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-950 dark:text-white font-mono"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label for="admin-bio" class="block text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-white mb-1.5">
+              Author Biography / Bio
+            </label>
+            <textarea
+              id="admin-bio"
+              rows="3"
+              class="w-full rounded-md border border-neutral-300 bg-white px-3.5 py-2 text-xs leading-relaxed text-neutral-900 focus:border-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-950 dark:text-white"
+            >{authors.ishara?.bio || "Founder and publisher of The Dispatched. Focuses on distributed architectures, edge computing, and minimalist software craftsmanship."}</textarea>
+          </div>
+
+          <div class="pt-2">
+            <button
+              type="submit"
+              id="btn-save-profile"
+              class="inline-flex items-center gap-2 rounded-md bg-neutral-900 px-4 py-2 text-xs font-semibold text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-100 transition-colors shadow-sm cursor-pointer"
+            >
+              <Icon name="floppy-disk" class="w-4 h-4" />
+              <span>Save & Update Author Profile</span>
             </button>
           </div>
         </form>

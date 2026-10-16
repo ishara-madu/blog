@@ -932,3 +932,144 @@ if (settingsForm) {
   });
 }
 
+// ===================================================
+// 7. ADMIN & AUTHOR PROFILE CONTROLLER
+// ===================================================
+const adminProfileForm = document.getElementById('admin-profile-form');
+const btnEditAuthorInline = document.getElementById('btn-edit-author-inline');
+const tabBtnAuthor = document.getElementById('tab-btn-author');
+const adminAvatarInput = document.getElementById('admin-avatar');
+const adminAvatarPreview = document.getElementById('admin-avatar-preview');
+const postAuthorSelect = document.getElementById('post-author');
+
+// Inline "Edit My Admin Details" click switches to Admin Profile tab
+if (btnEditAuthorInline && tabBtnAuthor) {
+  btnEditAuthorInline.addEventListener('click', () => {
+    tabBtnAuthor.click();
+  });
+}
+
+// Live Avatar Preview in Profile Form
+if (adminAvatarInput && adminAvatarPreview) {
+  adminAvatarInput.addEventListener('input', () => {
+    const url = adminAvatarInput.value.trim();
+    if (url) {
+      adminAvatarPreview.src = url;
+    }
+  });
+}
+
+// Submit handler to update admin profile locally and commit to GitHub
+if (adminProfileForm) {
+  adminProfileForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const name = document.getElementById('admin-name').value.trim();
+    const role = document.getElementById('admin-role').value.trim();
+    const handle = document.getElementById('admin-handle').value.trim();
+    const avatar = document.getElementById('admin-avatar').value.trim();
+    const bio = document.getElementById('admin-bio').value.trim();
+
+    const session = getOwnerSession();
+    const token = session?.token;
+
+    const btnSubmit = document.getElementById('btn-save-profile');
+    if (btnSubmit) {
+      btnSubmit.disabled = true;
+      btnSubmit.innerText = 'Saving Profile...';
+    }
+
+    try {
+      // 1. Send update to API route to save to src/data/authors.json and commit to GitHub
+      const res = await fetch('/api/admin/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, role, handle, avatar, bio, token }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        // 2. Save in localStorage
+        const adminProfile = { name, role, handle, avatar, bio };
+        localStorage.setItem('gh_admin_profile', JSON.stringify(adminProfile));
+
+        // 3. Update the Lead Author select dropdown option dynamically
+        if (postAuthorSelect) {
+          let isharaOpt = postAuthorSelect.querySelector('option[value="ishara"]');
+          if (!isharaOpt) {
+            isharaOpt = document.createElement('option');
+            isharaOpt.value = 'ishara';
+            postAuthorSelect.prepend(isharaOpt);
+          }
+          isharaOpt.textContent = `${name} (${role})`;
+          isharaOpt.setAttribute('data-name', name);
+          isharaOpt.setAttribute('data-role', role);
+          isharaOpt.setAttribute('data-avatar', avatar);
+          isharaOpt.setAttribute('data-handle', handle);
+          isharaOpt.setAttribute('data-bio', bio);
+          postAuthorSelect.value = 'ishara';
+        }
+
+        // 4. Update header avatar & name
+        if (ownerNameEl) ownerNameEl.textContent = `@${handle.replace(/^@/, '') || 'ishara-madu'}`;
+        if (ownerAvatarEl && avatar) ownerAvatarEl.src = avatar;
+
+        const syncMsg = data.githubCommitted
+          ? 'Committed to repository and saved successfully!'
+          : 'Saved locally and active for new articles!';
+
+        showToast('Admin Profile Updated', syncMsg);
+      } else {
+        showToast('Profile Error', data.error || 'Failed to update author profile', true);
+      }
+    } catch (err) {
+      showToast('Network Error', err.message, true);
+    } finally {
+      if (btnSubmit) {
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = '<span>Save & Update Author Profile</span>';
+      }
+    }
+  });
+}
+
+// Load cached admin profile if available
+function loadCachedAdminProfile() {
+  const raw = localStorage.getItem('gh_admin_profile');
+  if (!raw) return;
+  try {
+    const p = JSON.parse(raw);
+    const nameInput = document.getElementById('admin-name');
+    const roleInput = document.getElementById('admin-role');
+    const handleInput = document.getElementById('admin-handle');
+    const avatarInput = document.getElementById('admin-avatar');
+    const bioInput = document.getElementById('admin-bio');
+
+    if (nameInput && p.name) nameInput.value = p.name;
+    if (roleInput && p.role) roleInput.value = p.role;
+    if (handleInput && p.handle) handleInput.value = p.handle;
+    if (avatarInput && p.avatar) {
+      avatarInput.value = p.avatar;
+      if (adminAvatarPreview) adminAvatarPreview.src = p.avatar;
+    }
+    if (bioInput && p.bio) bioInput.value = p.bio;
+
+    // Sync dropdown
+    if (postAuthorSelect && p.name) {
+      let isharaOpt = postAuthorSelect.querySelector('option[value="ishara"]');
+      if (isharaOpt) {
+        isharaOpt.textContent = `${p.name} (${p.role})`;
+        isharaOpt.setAttribute('data-name', p.name);
+        isharaOpt.setAttribute('data-role', p.role);
+        if (p.avatar) isharaOpt.setAttribute('data-avatar', p.avatar);
+        if (p.handle) isharaOpt.setAttribute('data-handle', p.handle);
+        if (p.bio) isharaOpt.setAttribute('data-bio', p.bio);
+      }
+    }
+  } catch (e) {}
+}
+
+loadCachedAdminProfile();
+
+
