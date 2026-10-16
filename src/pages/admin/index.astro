@@ -81,17 +81,76 @@ import { posts, categories, authors } from '../../data/blogData';
           <Icon name="shield-check" weight="bold" class="w-6 h-6" />
         </div>
 
-        <h1 class="text-xl font-bold tracking-tight text-neutral-950 dark:text-white mb-2">
-          Repository Owner Only
+        <h1 class="text-xl font-bold tracking-tight text-neutral-950 dark:text-white mb-1.5">
+          Repository Owner Access
         </h1>
-        <p class="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed mb-6">
-          Access to this studio is restricted strictly to the verified GitHub repository owner. Authenticate with your GitHub Personal Access Token to manage, write, edit, or delete articles.
+        <p class="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed mb-1">
+          Connected Repository: <a href="https://github.com/ishara-madu/blog" target="_blank" class="font-mono text-neutral-900 dark:text-white underline hover:opacity-80">ishara-madu/blog</a>
+        </p>
+        <p class="text-[11px] text-neutral-500 dark:text-neutral-400 mb-6">
+          Publishing, editing, and deleting articles is strictly permitted for verified owner <strong class="font-mono text-neutral-900 dark:text-white">@ishara-madu</strong> only.
         </p>
 
-        <!-- Auth Error Feedback -->
-        <div id="auth-feedback" class="hidden mb-4 rounded-md border border-rose-200 bg-rose-50 p-3 text-left text-xs text-rose-800 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-200"></div>
+        <!-- Auth Feedback Alert (Errors or OAuth info) -->
+        <div id="auth-feedback" class="hidden mb-5 rounded-md border p-3.5 text-left text-xs leading-relaxed"></div>
 
-        <form id="auth-form" class="space-y-4 text-left">
+        <!-- Previous Session 1-Click Quick Re-Auth -->
+        <div id="quick-reauth-box" class="hidden mb-5 rounded-lg border border-neutral-200 bg-neutral-50/70 p-3.5 dark:border-neutral-800 dark:bg-neutral-950/60 flex items-center justify-between gap-3 text-left">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <img id="quick-avatar" src="" alt="Avatar" class="w-7 h-7 rounded-full object-cover shrink-0 border border-neutral-200 dark:border-neutral-800" />
+            <div class="min-w-0">
+              <div class="text-xs font-semibold text-neutral-950 dark:text-white truncate" id="quick-name">@ishara-madu</div>
+              <div class="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Verified Owner Session Saved</div>
+            </div>
+          </div>
+          <button
+            type="button"
+            id="btn-quick-signin"
+            class="inline-flex items-center gap-1.5 rounded-md bg-neutral-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-100 transition-colors shrink-0 cursor-pointer shadow-sm"
+          >
+            <Icon name="sign-in" weight="bold" class="w-3.5 h-3.5" />
+            <span>Continue</span>
+          </button>
+        </div>
+
+        <!-- PRIMARY: 1-CLICK GITHUB LOGIN BUTTON -->
+        <div class="space-y-3">
+          <a
+            href="/api/auth/github"
+            id="btn-oauth-login"
+            class="w-full inline-flex items-center justify-center gap-2.5 rounded-md bg-neutral-950 py-3 px-4 text-xs font-semibold text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-950 dark:hover:bg-neutral-100 transition-colors shadow-sm cursor-pointer"
+          >
+            <Icon name="github-logo" weight="bold" class="w-4 h-4" />
+            <span>Sign in with GitHub as @ishara-madu (1-Click)</span>
+          </a>
+
+          <p class="text-[11px] text-neutral-500 dark:text-neutral-400">
+            Verifies GitHub account and confirms ownership on <span class="font-mono">ishara-madu/blog</span>.
+          </p>
+        </div>
+
+        <!-- Subtle Divider for Manual / Custom Fallback -->
+        <div class="relative my-6">
+          <div class="absolute inset-0 flex items-center">
+            <div class="w-full border-t border-neutral-200 dark:border-neutral-800"></div>
+          </div>
+          <div class="relative flex justify-center text-xs">
+            <span class="bg-white dark:bg-neutral-900 px-2 text-neutral-400">or use manual token</span>
+          </div>
+        </div>
+
+        <!-- Collapsible Manual Form Toggle -->
+        <button
+          type="button"
+          id="toggle-manual-auth"
+          class="inline-flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white underline cursor-pointer"
+        >
+          <Icon name="key" class="w-3.5 h-3.5" />
+          <span id="toggle-manual-text">Manual Token / Custom Repository Settings</span>
+        </button>
+
+        <!-- Manual Token Form (Hidden by default, shown on toggle) -->
+        <form id="auth-form" class="hidden mt-4 space-y-4 text-left border-t border-neutral-200 dark:border-neutral-800 pt-4">
           <div>
             <label for="auth-owner" class="block text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-white mb-1">
               GitHub Owner / Username <span class="text-rose-500">*</span>
@@ -100,7 +159,8 @@ import { posts, categories, authors } from '../../data/blogData';
               type="text"
               id="auth-owner"
               required
-              placeholder="e.g. your-github-username"
+              value="ishara-madu"
+              placeholder="e.g. ishara-madu"
               class="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-950 dark:text-white font-mono"
             />
           </div>
@@ -113,6 +173,7 @@ import { posts, categories, authors } from '../../data/blogData';
               type="text"
               id="auth-repo"
               required
+              value="blog"
               placeholder="e.g. blog"
               class="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-950 dark:text-white font-mono"
             />
@@ -140,7 +201,7 @@ import { posts, categories, authors } from '../../data/blogData';
             class="w-full inline-flex items-center justify-center gap-2 rounded-md bg-neutral-900 py-2.5 text-xs font-semibold text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-100 transition-colors shadow-sm mt-2 cursor-pointer"
           >
             <Icon name="lock-key" weight="bold" class="w-4 h-4" />
-            <span>Authenticate as Owner</span>
+            <span>Verify & Authenticate Token</span>
           </button>
         </form>
       </div>
@@ -615,7 +676,8 @@ import { posts, categories, authors } from '../../data/blogData';
                 type="text"
                 id="gh-owner"
                 required
-                placeholder="e.g. your-github-username"
+                value="ishara-madu"
+                placeholder="e.g. ishara-madu"
                 class="w-full rounded-md border border-neutral-300 bg-white px-3.5 py-2 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-950 dark:text-white font-mono"
               />
             </div>
@@ -628,6 +690,7 @@ import { posts, categories, authors } from '../../data/blogData';
                 type="text"
                 id="gh-repo"
                 required
+                value="blog"
                 placeholder="e.g. blog"
                 class="w-full rounded-md border border-neutral-300 bg-white px-3.5 py-2 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-950 dark:text-white font-mono"
               />

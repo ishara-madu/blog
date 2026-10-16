@@ -16,6 +16,16 @@ const ownerNameEl = document.getElementById('owner-name');
 const ownerAvatarEl = document.getElementById('owner-avatar');
 const btnSignOut = document.getElementById('btn-sign-out');
 
+// 1-Click Quick Re-Auth Elements
+const quickReauthBox = document.getElementById('quick-reauth-box');
+const quickNameEl = document.getElementById('quick-name');
+const quickAvatarEl = document.getElementById('quick-avatar');
+const btnQuickSignin = document.getElementById('btn-quick-signin');
+
+// Manual Token Form Toggle Elements
+const toggleManualAuth = document.getElementById('toggle-manual-auth');
+const toggleManualText = document.getElementById('toggle-manual-text');
+
 function getOwnerSession() {
   const raw = localStorage.getItem('gh_owner_auth');
   if (!raw) return null;
@@ -47,16 +57,98 @@ function checkOwnerAccess() {
     if (studioApp) studioApp.classList.add('hidden');
     if (ownerBadge) ownerBadge.classList.add('hidden');
 
-    // Pre-fill owner/repo if saved in config
+    // Check if we have a cached previous session to offer 1-Click Quick Re-Auth
+    const lastSession = getOwnerSession();
+    if (lastSession && lastSession.username) {
+      if (quickReauthBox) quickReauthBox.classList.remove('hidden');
+      if (quickNameEl) quickNameEl.textContent = `@${lastSession.username}`;
+      if (quickAvatarEl && lastSession.avatarUrl) {
+        quickAvatarEl.src = lastSession.avatarUrl;
+      }
+    } else {
+      if (quickReauthBox) quickReauthBox.classList.add('hidden');
+    }
+
+    // Pre-fill owner/repo if saved in config, otherwise default to ishara-madu/blog
     const savedConfig = localStorage.getItem('gh_config');
+    let savedOwner = 'ishara-madu';
+    let savedRepo = 'blog';
     if (savedConfig) {
       try {
         const c = JSON.parse(savedConfig);
-        if (authOwnerInput && !authOwnerInput.value) authOwnerInput.value = c.owner || '';
-        if (authRepoInput && !authRepoInput.value) authRepoInput.value = c.repo || '';
+        if (c.owner) savedOwner = c.owner;
+        if (c.repo) savedRepo = c.repo;
       } catch (e) {}
     }
+    if (authOwnerInput) authOwnerInput.value = savedOwner;
+    if (authRepoInput) authRepoInput.value = savedRepo;
+
+    // Handle OAuth Callback / Error URL params
+    handleAuthUrlParams();
   }
+}
+
+function handleAuthUrlParams() {
+  const url = new URL(window.location.href);
+  const error = url.searchParams.get('error');
+  const needsToken = url.searchParams.get('needs_token');
+
+  if (error) {
+    showAuthNotice(
+      false,
+      `Authentication error: ${decodeURIComponent(error)}`
+    );
+  } else if (needsToken) {
+    showAuthNotice(
+      null,
+      'Please enter your GitHub Personal Access Token for @ishara-madu below. It will be securely stored in your browser so you will only need 1 click in the future.'
+    );
+    if (authForm) authForm.classList.remove('hidden');
+  }
+}
+
+function showAuthNotice(isSuccess, msg) {
+  if (!authFeedback) return;
+  authFeedback.classList.remove('hidden');
+  authFeedback.textContent = msg;
+
+  if (isSuccess === true) {
+    authFeedback.className =
+      'mb-5 rounded-md border border-emerald-300 bg-emerald-50/70 p-3.5 text-left text-xs text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300';
+  } else if (isSuccess === false) {
+    authFeedback.className =
+      'mb-5 rounded-md border border-rose-300 bg-rose-50/70 p-3.5 text-left text-xs text-rose-800 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300';
+  } else {
+    authFeedback.className =
+      'mb-5 rounded-md border border-neutral-300 bg-neutral-100 p-3.5 text-left text-xs text-neutral-700 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300';
+  }
+}
+
+// 1-Click Quick Re-Auth Handler
+if (btnQuickSignin) {
+  btnQuickSignin.addEventListener('click', () => {
+    const session = getOwnerSession();
+    if (session && session.token && session.username.toLowerCase() === 'ishara-madu') {
+      session.isOwner = true;
+      localStorage.setItem('gh_owner_auth', JSON.stringify(session));
+      showToast('Welcome Back', `Re-authenticated as verified owner @${session.username}.`);
+      checkOwnerAccess();
+    }
+  });
+}
+
+// Toggle Manual Token Form
+if (toggleManualAuth && authForm) {
+  toggleManualAuth.addEventListener('click', () => {
+    const isHidden = authForm.classList.contains('hidden');
+    if (isHidden) {
+      authForm.classList.remove('hidden');
+      if (toggleManualText) toggleManualText.textContent = 'Hide Manual Token Options';
+    } else {
+      authForm.classList.add('hidden');
+      if (toggleManualText) toggleManualText.textContent = 'Manual Token / Custom Repository Settings';
+    }
+  });
 }
 
 function syncSettingsFields(session) {
@@ -66,24 +158,24 @@ function syncSettingsFields(session) {
   const pathInput = document.getElementById('gh-path');
   const tokenInput = document.getElementById('gh-token');
 
-  if (ownerInput) ownerInput.value = session.owner || '';
-  if (repoInput) repoInput.value = session.repo || '';
+  if (ownerInput) ownerInput.value = session.owner || 'ishara-madu';
+  if (repoInput) repoInput.value = session.repo || 'blog';
   if (branchInput) branchInput.value = session.branch || 'main';
   if (pathInput) pathInput.value = session.pathPrefix || 'src/content/posts';
   if (tokenInput) tokenInput.value = session.token || '';
 }
 
-// Sign In / Verify Owner
+// Sign In / Verify Owner via Manual Form
 if (authForm) {
   authForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const owner = authOwnerInput.value.trim();
-    const repo = authRepoInput.value.trim();
+    const owner = authOwnerInput.value.trim() || 'ishara-madu';
+    const repo = authRepoInput.value.trim() || 'blog';
     const token = authTokenInput.value.trim();
 
-    if (!owner || !repo || !token) {
-      showAuthError('Please fill in Owner username, Repository name, and Access Token.');
+    if (!token) {
+      showAuthNotice(false, 'Please enter your GitHub Access Token for @ishara-madu.');
       return;
     }
 
@@ -102,16 +194,29 @@ if (authForm) {
 
       if (!userRes.ok) {
         const err = await userRes.json().catch(() => ({}));
-        showAuthError(err.message || 'Invalid GitHub token. Please verify your token has "repo" scope.');
+        showAuthNotice(false, err.message || 'Invalid GitHub token. Please verify your token has "repo" scope.');
         authBtn.disabled = false;
-        authBtn.innerHTML = '<span class="inline-flex items-center gap-2">Authenticate as Owner</span>';
+        authBtn.innerHTML = '<span class="inline-flex items-center gap-2">Verify & Authenticate Token</span>';
         return;
       }
 
       const userData = await userRes.json();
       const authenticatedUser = userData.login;
 
-      // 2. Fetch repository information and check permissions
+      // 2. Strict Owner Verification: must be @ishara-madu
+      const isDirectOwner = authenticatedUser.toLowerCase() === 'ishara-madu';
+
+      if (!isDirectOwner) {
+        showAuthNotice(
+          false,
+          `Access Denied: You authenticated as @${authenticatedUser}. Only @ishara-madu is permitted to create, edit, or delete articles in https://github.com/ishara-madu/blog.`
+        );
+        authBtn.disabled = false;
+        authBtn.innerHTML = '<span class="inline-flex items-center gap-2">Verify & Authenticate Token</span>';
+        return;
+      }
+
+      // 3. Verify permissions on repository ishara-madu/blog
       const repoRes = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
         headers: {
           Accept: 'application/vnd.github.v3+json',
@@ -121,9 +226,9 @@ if (authForm) {
 
       if (!repoRes.ok) {
         const err = await repoRes.json().catch(() => ({}));
-        showAuthError(err.message || `Cannot access repository ${owner}/${repo}. Check repository name.`);
+        showAuthNotice(false, err.message || `Cannot access repository ${owner}/${repo}. Check repository permissions.`);
         authBtn.disabled = false;
-        authBtn.innerHTML = '<span class="inline-flex items-center gap-2">Authenticate as Owner</span>';
+        authBtn.innerHTML = '<span class="inline-flex items-center gap-2">Verify & Authenticate Token</span>';
         return;
       }
 
@@ -136,11 +241,12 @@ if (authForm) {
       const hasAdminRights = Boolean(permissions.admin || isDirectOwner);
 
       if (!isDirectOwner && !hasAdminRights) {
-        showAuthError(
+        showAuthNotice(
+          false,
           `Access Denied: You authenticated as @${authenticatedUser}, but this repository is owned by @${repoOwner}. Only the repository owner can create, edit, or delete articles.`
         );
         authBtn.disabled = false;
-        authBtn.innerHTML = '<span class="inline-flex items-center gap-2">Authenticate as Owner</span>';
+        authBtn.innerHTML = '<span class="inline-flex items-center gap-2">Verify & Authenticate Token</span>';
         return;
       }
 
@@ -162,19 +268,12 @@ if (authForm) {
       showToast('Welcome Back, Owner', `Verified administrative access granted for @${authenticatedUser}.`);
       checkOwnerAccess();
     } catch (err) {
-      showAuthError(`Network connection error: ${err.message}`);
+      showAuthNotice(false, `Network connection error: ${err.message}`);
     } finally {
       authBtn.disabled = false;
-      authBtn.innerHTML = '<span class="inline-flex items-center gap-2">Authenticate as Owner</span>';
+      authBtn.innerHTML = '<span class="inline-flex items-center gap-2">Verify & Authenticate Token</span>';
     }
   });
-}
-
-function showAuthError(msg) {
-  if (authFeedback) {
-    authFeedback.classList.remove('hidden');
-    authFeedback.textContent = msg;
-  }
 }
 
 // Sign Out Handler

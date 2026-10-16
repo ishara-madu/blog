@@ -22,9 +22,10 @@ const {
 const cleanName = name.replace(/^ph-/, '');
 
 // Attempt to load direct SVG from @phosphor-icons/core for zero runtime flash and crisp vector scaling
+const filename = weight === 'regular' ? `${cleanName}.svg` : `${cleanName}-${weight}.svg`;
 const assetPath = path.resolve(
   process.cwd(),
-  `node_modules/@phosphor-icons/core/assets/${weight}/${cleanName}.svg`
+  `node_modules/@phosphor-icons/core/assets/${weight}/${filename}`
 );
 
 let renderedSvg = '';
