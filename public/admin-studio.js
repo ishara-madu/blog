@@ -381,6 +381,24 @@ editButtons.forEach((btn) => {
       const catSelect = document.getElementById('post-category');
       if (catSelect) catSelect.value = post.categorySlug || catSelect.options[0].value;
 
+      // Set author select
+      const authorSelect = document.getElementById('post-author');
+      if (authorSelect && post.author) {
+        for (let i = 0; i < authorSelect.options.length; i++) {
+          const opt = authorSelect.options[i];
+          if (
+            opt.getAttribute('data-name')?.toLowerCase() === post.author.name?.toLowerCase() ||
+            opt.getAttribute('data-handle')?.toLowerCase() === post.author.handle?.toLowerCase()
+          ) {
+            authorSelect.selectedIndex = i;
+            break;
+          }
+        }
+        if (typeof updateInlineEditButtonLabel === 'function') {
+          updateInlineEditButtonLabel();
+        }
+      }
+
       // Update image preview
       const coverPreview = document.getElementById('cover-preview');
       const coverPlaceholder = document.getElementById('cover-placeholder');
@@ -623,6 +641,7 @@ function buildMarkdownData() {
   const authorRole = aOpt.getAttribute('data-role');
   const authorAvatar = aOpt.getAttribute('data-avatar');
   const authorHandle = aOpt.getAttribute('data-handle');
+  const authorFollowUrl = aOpt.getAttribute('data-follow-url') || '';
   const authorBio = aOpt.getAttribute('data-bio');
 
   const tagsRaw = document.getElementById('post-tags').value.trim();
@@ -661,6 +680,7 @@ author:
   role: "${authorRole}"
   avatar: "${authorAvatar}"
   handle: "${authorHandle}"
+  followUrl: "${authorFollowUrl}"
   bio: "${authorBio.replace(/"/g, '\\"')}"
 tags:
 ${tags.map((t) => `  - "${t}"`).join('\n')}
@@ -933,19 +953,272 @@ if (settingsForm) {
 }
 
 // ===================================================
-// 7. ADMIN & AUTHOR PROFILE CONTROLLER
+// 7. COMPREHENSIVE AUTHOR PROFILES CONTROLLER
 // ===================================================
 const adminProfileForm = document.getElementById('admin-profile-form');
 const btnEditAuthorInline = document.getElementById('btn-edit-author-inline');
+const btnEditAuthorInlineText = document.getElementById('btn-edit-author-inline-text');
 const tabBtnAuthor = document.getElementById('tab-btn-author');
 const adminAvatarInput = document.getElementById('admin-avatar');
 const adminAvatarPreview = document.getElementById('admin-avatar-preview');
 const postAuthorSelect = document.getElementById('post-author');
+const authorCardsList = document.getElementById('author-cards-list');
+const btnNewAuthor = document.getElementById('btn-new-author');
+const btnDeleteProfile = document.getElementById('btn-delete-profile');
+const authorKeyInput = document.getElementById('author-key');
+const authorKeyGroup = document.getElementById('author-key-group');
+const authorKeyNewInput = document.getElementById('author-key-input');
+const authorFormTitle = document.getElementById('author-form-title');
+const authorFormSubtitle = document.getElementById('author-form-subtitle');
+const authorKeyBadge = document.getElementById('author-key-badge');
 
-// Inline "Edit My Admin Details" click switches to Admin Profile tab
+let currentEditingAuthorKey = 'ishara';
+let authorsMap = {};
+
+// Initialize authorsMap from existing DOM options
+function initAuthorsMapFromDOM() {
+  if (!postAuthorSelect) return;
+  for (const opt of postAuthorSelect.options) {
+    const key = opt.value;
+    authorsMap[key] = {
+      name: opt.getAttribute('data-name') || opt.textContent.split(' (')[0],
+      role: opt.getAttribute('data-role') || '',
+      avatar: opt.getAttribute('data-avatar') || '/images/authors/author-ishara.jpg',
+      handle: opt.getAttribute('data-handle') || `@${key}`,
+      followUrl: opt.getAttribute('data-follow-url') || `https://github.com/${key}`,
+      bio: opt.getAttribute('data-bio') || '',
+    };
+  }
+}
+
+initAuthorsMapFromDOM();
+
+// Fetch latest authors from API
+async function fetchLatestAuthors() {
+  try {
+    const res = await fetch('/api/admin/profile');
+    if (res.ok) {
+      const data = await res.json();
+      if (data.authors && Object.keys(data.authors).length > 0) {
+        authorsMap = data.authors;
+        renderAuthorCards();
+        syncAuthorSelect(currentEditingAuthorKey || 'ishara');
+        if (currentEditingAuthorKey && authorsMap[currentEditingAuthorKey]) {
+          selectAuthorForEditing(currentEditingAuthorKey);
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('Could not fetch authors dynamically', e);
+  }
+}
+
+fetchLatestAuthors();
+
+// Render author cards shelf in Tab 4
+function renderAuthorCards() {
+  if (!authorCardsList) return;
+  authorCardsList.innerHTML = '';
+
+  Object.entries(authorsMap).forEach(([key, a]) => {
+    const isSelected = key === currentEditingAuthorKey;
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.setAttribute('data-author-key', key);
+    card.className = `author-card-select text-left p-3 rounded-lg border transition-all flex items-center gap-3 cursor-pointer ${
+      isSelected
+        ? 'border-neutral-900 bg-neutral-100/80 dark:border-white dark:bg-neutral-800'
+        : 'border-neutral-200 bg-white hover:border-neutral-400 dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-neutral-600'
+    }`;
+
+    card.innerHTML = `
+      <img
+        src="${a.avatar || '/images/authors/author-ishara.jpg'}"
+        alt="${a.name}"
+        class="w-9 h-9 rounded-full object-cover shrink-0 ring-1 ring-neutral-200 dark:ring-neutral-700"
+      />
+      <div class="min-w-0 flex-1">
+        <div class="text-xs font-semibold text-neutral-950 dark:text-white truncate">
+          ${a.name}
+        </div>
+        <div class="text-[11px] text-neutral-500 dark:text-neutral-400 truncate">
+          ${a.role || a.handle}
+        </div>
+      </div>
+    `;
+
+    card.addEventListener('click', () => {
+      selectAuthorForEditing(key);
+    });
+
+    authorCardsList.appendChild(card);
+  });
+}
+
+// Select an author and populate the editing form
+function selectAuthorForEditing(key) {
+  const author = authorsMap[key];
+  if (!author) return;
+
+  currentEditingAuthorKey = key;
+
+  // Form Fields
+  if (authorKeyInput) authorKeyInput.value = key;
+  if (authorKeyGroup) authorKeyGroup.classList.add('hidden');
+  if (authorKeyNewInput) authorKeyNewInput.required = false;
+
+  const nameInput = document.getElementById('admin-name');
+  const roleInput = document.getElementById('admin-role');
+  const handleInput = document.getElementById('admin-handle');
+  const followInput = document.getElementById('admin-follow');
+  const avatarInput = document.getElementById('admin-avatar');
+  const bioInput = document.getElementById('admin-bio');
+
+  if (nameInput) nameInput.value = author.name || '';
+  if (roleInput) roleInput.value = author.role || '';
+  if (handleInput) handleInput.value = author.handle || '';
+  if (followInput) followInput.value = author.followUrl || '';
+  if (avatarInput) avatarInput.value = author.avatar || '';
+  if (adminAvatarPreview) adminAvatarPreview.src = author.avatar || '/images/authors/author-ishara.jpg';
+  if (bioInput) bioInput.value = author.bio || '';
+
+  // Form Headers & Badges
+  if (authorFormTitle) authorFormTitle.textContent = `Editing Profile: ${author.name}`;
+  if (authorFormSubtitle) {
+    authorFormSubtitle.innerHTML = `Key: <code class="font-mono text-neutral-800 dark:text-neutral-200">${key}</code> ${
+      key === 'ishara' ? '(Primary Repository Owner)' : '(Editorial Contributor)'
+    }`;
+  }
+
+  if (authorKeyBadge) {
+    if (key === 'ishara') {
+      authorKeyBadge.textContent = '● Owner Profile';
+      authorKeyBadge.className = 'text-xs font-mono text-emerald-600 dark:text-emerald-400 font-semibold';
+    } else {
+      authorKeyBadge.textContent = '● Contributor Profile';
+      authorKeyBadge.className = 'text-xs font-mono text-neutral-500 dark:text-neutral-400 font-semibold';
+    }
+  }
+
+  // Delete button visibility (Owner cannot be deleted)
+  if (btnDeleteProfile) {
+    if (key === 'ishara') {
+      btnDeleteProfile.classList.add('hidden');
+    } else {
+      btnDeleteProfile.classList.remove('hidden');
+    }
+  }
+
+  // Update card highlights
+  const allCards = document.querySelectorAll('.author-card-select');
+  allCards.forEach((c) => {
+    const cKey = c.getAttribute('data-author-key');
+    if (cKey === key) {
+      c.className = 'author-card-select text-left p-3 rounded-lg border transition-all flex items-center gap-3 cursor-pointer border-neutral-900 bg-neutral-100/80 dark:border-white dark:bg-neutral-800';
+    } else {
+      c.className = 'author-card-select text-left p-3 rounded-lg border transition-all flex items-center gap-3 cursor-pointer border-neutral-200 bg-white hover:border-neutral-400 dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-neutral-600';
+    }
+  });
+}
+
+// Switch to New Author Creation Mode
+function setupNewAuthorMode() {
+  currentEditingAuthorKey = null;
+
+  if (authorKeyGroup) authorKeyGroup.classList.remove('hidden');
+  if (authorKeyNewInput) {
+    authorKeyNewInput.required = true;
+    authorKeyNewInput.value = '';
+    authorKeyNewInput.focus();
+  }
+  if (authorKeyInput) authorKeyInput.value = '';
+
+  const nameInput = document.getElementById('admin-name');
+  const roleInput = document.getElementById('admin-role');
+  const handleInput = document.getElementById('admin-handle');
+  const followInput = document.getElementById('admin-follow');
+  const avatarInput = document.getElementById('admin-avatar');
+  const bioInput = document.getElementById('admin-bio');
+
+  if (nameInput) nameInput.value = '';
+  if (roleInput) roleInput.value = 'Author & Contributor';
+  if (handleInput) handleInput.value = '';
+  if (followInput) followInput.value = '';
+  if (avatarInput) avatarInput.value = '/images/authors/author-ishara.jpg';
+  if (adminAvatarPreview) adminAvatarPreview.src = '/images/authors/author-ishara.jpg';
+  if (bioInput) bioInput.value = '';
+
+  if (authorFormTitle) authorFormTitle.textContent = 'Add New Author Profile';
+  if (authorFormSubtitle) authorFormSubtitle.textContent = 'Create a new author to appear in the Lead Author selector and articles';
+  if (authorKeyBadge) {
+    authorKeyBadge.textContent = '● New Author';
+    authorKeyBadge.className = 'text-xs font-mono text-blue-600 dark:text-blue-400 font-semibold';
+  }
+
+  if (btnDeleteProfile) btnDeleteProfile.classList.add('hidden');
+
+  // Deselect all cards
+  const allCards = document.querySelectorAll('.author-card-select');
+  allCards.forEach((c) => {
+    c.className = 'author-card-select text-left p-3 rounded-lg border transition-all flex items-center gap-3 cursor-pointer border-neutral-200 bg-white hover:border-neutral-400 dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-neutral-600';
+  });
+}
+
+if (btnNewAuthor) {
+  btnNewAuthor.addEventListener('click', () => {
+    setupNewAuthorMode();
+  });
+}
+
+// Synchronize #post-author select dropdown
+function syncAuthorSelect(selectedKey) {
+  if (!postAuthorSelect) return;
+  postAuthorSelect.innerHTML = '';
+
+  Object.entries(authorsMap).forEach(([key, a]) => {
+    const opt = document.createElement('option');
+    opt.value = key;
+    opt.textContent = `${a.name} (${a.role || 'Contributor'})`;
+    opt.setAttribute('data-name', a.name);
+    opt.setAttribute('data-role', a.role || '');
+    opt.setAttribute('data-avatar', a.avatar || '');
+    opt.setAttribute('data-handle', a.handle || '');
+    opt.setAttribute('data-follow-url', a.followUrl || '');
+    opt.setAttribute('data-bio', a.bio || '');
+
+    if (key === selectedKey) opt.selected = true;
+    postAuthorSelect.appendChild(opt);
+  });
+
+  updateInlineEditButtonLabel();
+}
+
+function updateInlineEditButtonLabel() {
+  if (!postAuthorSelect || !btnEditAuthorInlineText) return;
+  const currentKey = postAuthorSelect.value;
+  const author = authorsMap[currentKey];
+  if (author) {
+    btnEditAuthorInlineText.textContent = `Edit "${author.name}" Profile`;
+  } else {
+    btnEditAuthorInlineText.textContent = 'Edit Author Profile';
+  }
+}
+
+if (postAuthorSelect) {
+  postAuthorSelect.addEventListener('change', () => {
+    updateInlineEditButtonLabel();
+  });
+}
+
+// Inline "Edit Author Details" click in Composer
 if (btnEditAuthorInline && tabBtnAuthor) {
   btnEditAuthorInline.addEventListener('click', () => {
+    const currentKey = postAuthorSelect ? postAuthorSelect.value : 'ishara';
     tabBtnAuthor.click();
+    selectAuthorForEditing(currentKey);
+    if (adminProfileForm) {
+      adminProfileForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   });
 }
 
@@ -959,16 +1232,32 @@ if (adminAvatarInput && adminAvatarPreview) {
   });
 }
 
-// Submit handler to update admin profile locally and commit to GitHub
+// Form Submit: Save or Update Author Profile
 if (adminProfileForm) {
   adminProfileForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
+    let authorId = currentEditingAuthorKey;
+    if (!authorId) {
+      const rawSlug = authorKeyNewInput?.value.trim().toLowerCase() || '';
+      authorId = rawSlug.replace(/[^a-z0-9_-]/g, '-').replace(/^-+|-+$/g, '');
+      if (!authorId) {
+        showToast('Validation Error', 'Please enter a valid author slug/identifier (e.g. "kasun-perera").', true);
+        return;
+      }
+    }
+
     const name = document.getElementById('admin-name').value.trim();
     const role = document.getElementById('admin-role').value.trim();
     const handle = document.getElementById('admin-handle').value.trim();
+    const followUrl = document.getElementById('admin-follow').value.trim();
     const avatar = document.getElementById('admin-avatar').value.trim();
     const bio = document.getElementById('admin-bio').value.trim();
+
+    if (!name) {
+      showToast('Validation Error', 'Display Name is required.', true);
+      return;
+    }
 
     const session = getOwnerSession();
     const token = session?.token;
@@ -976,50 +1265,53 @@ if (adminProfileForm) {
     const btnSubmit = document.getElementById('btn-save-profile');
     if (btnSubmit) {
       btnSubmit.disabled = true;
-      btnSubmit.innerText = 'Saving Profile...';
+      btnSubmit.innerHTML = '<span>Saving Profile...</span>';
     }
 
     try {
-      // 1. Send update to API route to save to src/data/authors.json and commit to GitHub
       const res = await fetch('/api/admin/profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, role, handle, avatar, bio, token }),
+        body: JSON.stringify({
+          id: authorId,
+          name,
+          role,
+          handle,
+          followUrl,
+          avatar,
+          bio,
+          token,
+          action: 'save',
+        }),
       });
 
       const data = await res.json();
 
       if (res.ok) {
-        // 2. Save in localStorage
-        const adminProfile = { name, role, handle, avatar, bio };
-        localStorage.setItem('gh_admin_profile', JSON.stringify(adminProfile));
+        authorsMap[authorId] = {
+          name,
+          role,
+          handle,
+          followUrl,
+          avatar,
+          bio,
+        };
 
-        // 3. Update the Lead Author select dropdown option dynamically
-        if (postAuthorSelect) {
-          let isharaOpt = postAuthorSelect.querySelector('option[value="ishara"]');
-          if (!isharaOpt) {
-            isharaOpt = document.createElement('option');
-            isharaOpt.value = 'ishara';
-            postAuthorSelect.prepend(isharaOpt);
-          }
-          isharaOpt.textContent = `${name} (${role})`;
-          isharaOpt.setAttribute('data-name', name);
-          isharaOpt.setAttribute('data-role', role);
-          isharaOpt.setAttribute('data-avatar', avatar);
-          isharaOpt.setAttribute('data-handle', handle);
-          isharaOpt.setAttribute('data-bio', bio);
-          postAuthorSelect.value = 'ishara';
+        if (authorId === 'ishara') {
+          localStorage.setItem('gh_admin_profile', JSON.stringify(authorsMap[authorId]));
+          if (ownerNameEl) ownerNameEl.textContent = `@${handle.replace(/^@/, '') || 'ishara-madu'}`;
+          if (ownerAvatarEl && avatar) ownerAvatarEl.src = avatar;
         }
 
-        // 4. Update header avatar & name
-        if (ownerNameEl) ownerNameEl.textContent = `@${handle.replace(/^@/, '') || 'ishara-madu'}`;
-        if (ownerAvatarEl && avatar) ownerAvatarEl.src = avatar;
+        renderAuthorCards();
+        syncAuthorSelect(authorId);
+        selectAuthorForEditing(authorId);
 
         const syncMsg = data.githubCommitted
-          ? 'Committed to repository and saved successfully!'
-          : 'Saved locally and active for new articles!';
+          ? `Committed to repository storage and active across all articles!`
+          : `Saved locally and ready for publishing!`;
 
-        showToast('Admin Profile Updated', syncMsg);
+        showToast('Author Profile Saved', syncMsg);
       } else {
         showToast('Profile Error', data.error || 'Failed to update author profile', true);
       }
@@ -1028,48 +1320,60 @@ if (adminProfileForm) {
     } finally {
       if (btnSubmit) {
         btnSubmit.disabled = false;
-        btnSubmit.innerHTML = '<span>Save & Update Author Profile</span>';
+        btnSubmit.innerHTML = '<svg class="w-4 h-4 fill-current" viewBox="0 0 256 256"><path d="M219.31,72,184,36.69A15.86,15.86,0,0,0,172.69,32H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V83.31A15.86,15.86,0,0,0,219.31,72ZM168,48V80H88V48ZM208,208H48V48H72V88a8,8,0,0,0,8,8h96a8,8,0,0,0,8-8V51.31L208,75.31Z"/></svg><span>Save & Update Author Profile</span>';
       }
     }
   });
 }
 
-// Load cached admin profile if available
-function loadCachedAdminProfile() {
-  const raw = localStorage.getItem('gh_admin_profile');
-  if (!raw) return;
-  try {
-    const p = JSON.parse(raw);
-    const nameInput = document.getElementById('admin-name');
-    const roleInput = document.getElementById('admin-role');
-    const handleInput = document.getElementById('admin-handle');
-    const avatarInput = document.getElementById('admin-avatar');
-    const bioInput = document.getElementById('admin-bio');
-
-    if (nameInput && p.name) nameInput.value = p.name;
-    if (roleInput && p.role) roleInput.value = p.role;
-    if (handleInput && p.handle) handleInput.value = p.handle;
-    if (avatarInput && p.avatar) {
-      avatarInput.value = p.avatar;
-      if (adminAvatarPreview) adminAvatarPreview.src = p.avatar;
+// Delete Author Profile
+if (btnDeleteProfile) {
+  btnDeleteProfile.addEventListener('click', async () => {
+    if (!currentEditingAuthorKey || currentEditingAuthorKey === 'ishara') {
+      showToast('Action Denied', 'The primary owner profile cannot be deleted.', true);
+      return;
     }
-    if (bioInput && p.bio) bioInput.value = p.bio;
 
-    // Sync dropdown
-    if (postAuthorSelect && p.name) {
-      let isharaOpt = postAuthorSelect.querySelector('option[value="ishara"]');
-      if (isharaOpt) {
-        isharaOpt.textContent = `${p.name} (${p.role})`;
-        isharaOpt.setAttribute('data-name', p.name);
-        isharaOpt.setAttribute('data-role', p.role);
-        if (p.avatar) isharaOpt.setAttribute('data-avatar', p.avatar);
-        if (p.handle) isharaOpt.setAttribute('data-handle', p.handle);
-        if (p.bio) isharaOpt.setAttribute('data-bio', p.bio);
+    const author = authorsMap[currentEditingAuthorKey];
+    const confirmed = confirm(`Are you sure you want to permanently delete author profile "${author?.name || currentEditingAuthorKey}"?`);
+    if (!confirmed) return;
+
+    const session = getOwnerSession();
+    const token = session?.token;
+
+    btnDeleteProfile.disabled = true;
+
+    try {
+      const res = await fetch('/api/admin/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: currentEditingAuthorKey,
+          action: 'delete',
+          token,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        delete authorsMap[currentEditingAuthorKey];
+        renderAuthorCards();
+        syncAuthorSelect('ishara');
+        selectAuthorForEditing('ishara');
+        showToast('Author Deleted', `Successfully deleted author profile "${author?.name || currentEditingAuthorKey}".`);
+      } else {
+        showToast('Delete Failed', data.error || 'Could not delete author', true);
       }
+    } catch (err) {
+      showToast('Network Error', err.message, true);
+    } finally {
+      btnDeleteProfile.disabled = false;
     }
-  } catch (e) {}
+  });
 }
 
-loadCachedAdminProfile();
+// Initial selection & label setup
+selectAuthorForEditing('ishara');
+updateInlineEditButtonLabel();
 
 

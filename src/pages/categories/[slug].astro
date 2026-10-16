@@ -151,7 +151,13 @@ const otherCategories = categories.filter((c) => c.slug !== category.slug);
                 />
                 <div class="text-xs">
                   <div class="font-semibold text-neutral-950 dark:text-white">
-                    {leadPost.author.name}
+                    {leadPost.author.followUrl ? (
+                      <a href={leadPost.author.followUrl} target="_blank" rel="noopener noreferrer" class="hover:underline">
+                        {leadPost.author.name}
+                      </a>
+                    ) : (
+                      leadPost.author.name
+                    )}
                   </div>
                   <div class="text-neutral-400 dark:text-neutral-500">
                     {leadPost.author.role}

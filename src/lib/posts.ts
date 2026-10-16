@@ -1,4 +1,5 @@
 import path from 'node:path';
+import authorsData from '../data/authors.json';
 
 export interface Author {
   name: string;
@@ -6,6 +7,7 @@ export interface Author {
   avatar: string;
   handle: string;
   bio: string;
+  followUrl?: string;
 }
 
 export interface TocItem {
@@ -125,15 +127,24 @@ export function getAllPosts(): Post[] {
       readTime: fm.readTime || '6 min read',
       featured: Boolean(fm.featured || slug.includes('edge-ai') || slug.includes('future-of-multimodal')),
       trending: Boolean(fm.trending || slug.includes('zero-latency') || slug.includes('minimalist-design')),
-      author: {
-        name: fm.author?.name || 'Ishara Madushanka',
-        role: fm.author?.role || 'Principal Systems Architect',
-        avatar: fm.author?.avatar || '/images/authors/author-ishara.jpg',
-        handle: fm.author?.handle || '@ishara-madu',
-        bio:
-          fm.author?.bio ||
-          'Owner and lead engineer of The Dispatched. Focuses on distributed architectures, low-latency systems, and minimalist software craftsmanship.',
-      },
+      author: (() => {
+        const matchingAuthor = Object.values(authorsData as Record<string, any>).find(
+          (a: any) =>
+            a.name?.toLowerCase() === fm.author?.name?.toLowerCase() ||
+            a.handle?.toLowerCase() === fm.author?.handle?.toLowerCase()
+        );
+        return {
+          name: fm.author?.name || matchingAuthor?.name || 'Ishara Madushanka',
+          role: fm.author?.role || matchingAuthor?.role || 'Principal Systems Architect',
+          avatar: fm.author?.avatar || matchingAuthor?.avatar || '/images/authors/author-ishara.jpg',
+          handle: fm.author?.handle || matchingAuthor?.handle || '@ishara-madu',
+          followUrl: fm.author?.followUrl || matchingAuthor?.followUrl || 'https://github.com/ishara-madu',
+          bio:
+            fm.author?.bio ||
+            matchingAuthor?.bio ||
+            'Owner and lead engineer of The Dispatched. Focuses on distributed architectures, low-latency systems, and minimalist software craftsmanship.',
+        };
+      })(),
       tags: Array.isArray(fm.tags) ? fm.tags : ['Engineering'],
       toc: toc.length > 0 ? toc : undefined,
       content: raw,

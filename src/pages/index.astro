@@ -116,27 +116,28 @@ const feedPosts = posts.filter((p) => p.id !== featuredPost.id);
           <p class="text-sm font-medium">No articles found in this category yet.</p>
         </div>
 
-        <!-- Pagination -->
+        <!-- Real Repository Count Bar -->
         <div class="flex items-center justify-between border-t border-neutral-200/80 pt-6 mt-6 text-xs text-neutral-500 dark:border-neutral-800/80 dark:text-neutral-400">
           <div>
-            Showing <strong class="text-neutral-900 dark:text-white font-medium">1–6</strong> of 78 total essays
+            Showing <strong class="text-neutral-900 dark:text-white font-medium">{feedPosts.length}</strong> dispatches ({posts.length} total across repository)
           </div>
-          <div class="flex items-center gap-2">
-            <button
-              type="button"
-              disabled
-              class="inline-flex items-center gap-1 rounded-md border border-neutral-200 px-3 py-1.5 text-neutral-400 opacity-50 cursor-not-allowed dark:border-neutral-800 dark:text-neutral-600"
+          <div class="flex items-center gap-3">
+            <a
+              href="/rss.xml"
+              class="inline-flex items-center gap-1.5 hover:text-neutral-950 dark:hover:text-white transition-colors"
             >
-              <Icon name="arrow-left" class="w-3.5 h-3.5" />
-              <span>Previous</span>
-            </button>
-            <button
-              type="button"
-              class="inline-flex items-center gap-1 rounded-md border border-neutral-300 px-3 py-1.5 text-neutral-800 hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-900 transition-colors"
+              <Icon name="rss" class="w-3.5 h-3.5" />
+              <span>RSS Feed</span>
+            </a>
+            <a
+              href="https://github.com/ishara-madu/blog"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center gap-1.5 text-neutral-800 dark:text-neutral-200 hover:underline font-medium"
             >
-              <span>Next</span>
-              <Icon name="arrow-right" class="w-3.5 h-3.5" />
-            </button>
+              <Icon name="github-logo" class="w-3.5 h-3.5" />
+              <span>GitHub Repository</span>
+            </a>
           </div>
         </div>
       </section>

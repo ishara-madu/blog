@@ -15,13 +15,13 @@ const popularPosts = posts.slice(0, 3);
       <strong class="text-neutral-900 dark:text-white font-medium">The Dispatched</strong> publishes rigorous, long-form technical explorations across computing systems, artificial intelligence, and software craftsmanship.
     </p>
     <div class="flex items-center gap-4 text-xs font-semibold text-neutral-900 dark:text-white">
-      <a href="#about" class="hover:underline flex items-center gap-1">
-        <span>About the Board</span>
+      <a href="/about" class="hover:underline flex items-center gap-1">
+        <span>About the Journal</span>
         <Icon name="arrow-right" class="w-3.5 h-3.5" />
       </a>
       <a href="/rss.xml" class="hover:underline flex items-center gap-1 text-neutral-500 dark:text-neutral-400">
         <Icon name="rss" class="w-3.5 h-3.5" />
-        <span>Atom / RSS</span>
+        <span>RSS Feed</span>
       </a>
     </div>
   </div>
@@ -95,7 +95,7 @@ const popularPosts = posts.slice(0, 3);
       A single weekly curated summary of top articles, architectural breakthroughs, and deep-dives.
     </p>
 
-    <form class="space-y-2" onsubmit="event.preventDefault(); alert('Subscribed to Weekly Dispatch!');">
+    <form class="space-y-2" onsubmit="event.preventDefault(); this.innerHTML = '<p class=\'text-xs text-emerald-600 dark:text-emerald-400 font-semibold py-2\'>Subscribed to dispatches successfully.</p>';">
       <div>
         <label for="newsletter-email" class="sr-only">Email address</label>
         <input
@@ -108,9 +108,9 @@ const popularPosts = posts.slice(0, 3);
       </div>
       <button
         type="submit"
-        class="w-full inline-flex items-center justify-center gap-2 rounded-md bg-neutral-900 px-3 py-2 text-xs font-semibold text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-100 transition-colors"
+        class="w-full inline-flex items-center justify-center gap-2 rounded-md bg-neutral-900 px-3 py-2 text-xs font-semibold text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-100 transition-colors cursor-pointer"
       >
-        <span>Subscribe</span>
+        <span>Subscribe to Dispatches</span>
         <Icon name="paper-plane-tilt" class="w-3.5 h-3.5" />
       </button>
     </form>

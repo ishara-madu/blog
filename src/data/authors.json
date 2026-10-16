@@ -6,29 +6,5 @@
     "handle": "@ishara-madu",
     "followUrl": "https://github.com/ishara-madu",
     "bio": "Founder and publisher of The Dispatched. Focuses on distributed architectures, edge computing, and minimalist software craftsmanship."
-  },
-  "kasun": {
-    "name": "Kasun Perera",
-    "role": "Principal Systems Architect",
-    "avatar": "/images/authors/author-kasun.jpg",
-    "handle": "@kasunp",
-    "followUrl": "https://github.com/kasunp",
-    "bio": "Designs distributed storage engines, low-latency consensus protocols, and resilient multi-region infrastructure."
-  },
-  "dilini": {
-    "name": "Dilini Jayawardena",
-    "role": "Staff AI Research Engineer",
-    "avatar": "/images/authors/author-dilini.jpg",
-    "handle": "@dilinij",
-    "followUrl": "https://github.com/dilinij",
-    "bio": "Specializes in small language model quantization, speculative decoding, and deploying on-device neural reasoning engines."
-  },
-  "nuwan": {
-    "name": "Nuwan Senanayake",
-    "role": "Lead Product Designer",
-    "avatar": "/images/authors/author-nuwan.jpg",
-    "handle": "@nuwans",
-    "followUrl": "https://x.com/nuwans",
-    "bio": "Designs typographic design systems, zero-bloat user interfaces, and intentional product aesthetics."
   }
 }
