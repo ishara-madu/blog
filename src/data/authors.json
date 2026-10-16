@@ -30,5 +30,13 @@
     "handle": "@nuwans",
     "followUrl": "https://x.com/nuwans",
     "bio": "Designs typographic design systems, zero-bloat user interfaces, and intentional product aesthetics."
+  },
+  "chamara": {
+    "name": "Chamara Silva",
+    "role": "Cloud Infrastructure Engineer",
+    "avatar": "/images/authors/author-ishara.jpg",
+    "handle": "@chamarasi",
+    "followUrl": "https://github.com/chamarasi",
+    "bio": "Cloud and distributed systems engineer."
   }
 }
