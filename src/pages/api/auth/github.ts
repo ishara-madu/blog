@@ -98,9 +98,10 @@ export const GET: APIRoute = async ({ request, redirect }) => {
     <p style="font-size: 12px; color: #a3a3a3;">Entering Studio for ${TARGET_OWNER}/${TARGET_REPO}...</p>
   </div>
   <script>
-    localStorage.setItem('gh_owner_auth', ${JSON.stringify(JSON.stringify(session))});
-    localStorage.setItem('gh_config', ${JSON.stringify(JSON.stringify(session))});
-    window.location.href = '/admin';
+    const session = ${JSON.stringify(session)};
+    localStorage.setItem('gh_owner_auth', JSON.stringify(session));
+    localStorage.setItem('gh_config', JSON.stringify(session));
+    window.location.replace('/admin');
   </script>
 </body>
 </html>`;

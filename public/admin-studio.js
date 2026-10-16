@@ -30,7 +30,13 @@ function getOwnerSession() {
   const raw = localStorage.getItem('gh_owner_auth');
   if (!raw) return null;
   try {
-    return JSON.parse(raw);
+    let parsed = JSON.parse(raw);
+    if (typeof parsed === 'string') {
+      try {
+        parsed = JSON.parse(parsed);
+      } catch (e) {}
+    }
+    return parsed;
   } catch (e) {
     return null;
   }
