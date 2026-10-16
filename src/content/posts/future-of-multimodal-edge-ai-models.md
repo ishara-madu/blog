@@ -1,7 +1,7 @@
 ---
 title: "The Rise of Compact Multimodal Reasoning Models on Local Edge Hardware"
 excerpt: "How sub-4-billion parameter language and vision models are outperforming massive centralized cloud clusters in latency, privacy, and contextual reasoning."
-coverImage: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1600&q=85"
+coverImage: "/images/posts/future-of-multimodal-edge-ai-models.jpg"
 coverAlt: "Abstract neural network and computational geometry representing next-generation AI"
 category: "Technology & AI"
 categorySlug: "technology-ai"
@@ -11,7 +11,7 @@ readTime: "8 min read"
 author:
   name: "Dilini Jayawardena"
   role: "Staff AI Research Engineer"
-  avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=200&q=80"
+  avatar: "/images/authors/author-ishara.jpg"
   handle: "@dilinij"
   bio: "Specializes in small language model quantization, speculative decoding, and deploying on-device neural reasoning engines on commodity hardware."
 tags:

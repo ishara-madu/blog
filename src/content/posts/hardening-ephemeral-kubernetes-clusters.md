@@ -1,7 +1,7 @@
 ---
 title: "Ephemeral CI/CD Runners: Zero-Trust Isolation for Mission-Critical Builds"
 excerpt: "How we transitioned from static build servers to single-use microVM clusters, preventing lateral credential leaks and cutting deployment times in half."
-coverImage: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1000&q=80"
+coverImage: "/images/posts/hardening-ephemeral-kubernetes-clusters.jpg"
 coverAlt: "Global digital network connectivity over illuminated planet earth"
 category: "Cloud & DevOps"
 categorySlug: "cloud-devops"
@@ -11,7 +11,7 @@ readTime: "7 min read"
 author:
   name: "Amali Fernando"
   role: "Cloud Infrastructure Director"
-  avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=80"
+  avatar: "/images/authors/author-ishara.jpg"
   handle: "@amalif"
   bio: "Directs cloud platform reliability, microVM security isolation, and developer experience for distributed engineering organizations."
 tags:

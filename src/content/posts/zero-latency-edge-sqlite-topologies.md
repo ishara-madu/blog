@@ -1,7 +1,7 @@
 ---
 title: "Designing Globally Replicated SQLite Clusters with Sub-5ms Read Latencies"
 excerpt: "A practical deep-dive into embedded database replication across thirty global regions, resolving read replicas without cross-ocean RPC overhead."
-coverImage: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=1000&q=80"
+coverImage: "/images/posts/zero-latency-edge-sqlite-topologies.jpg"
 coverAlt: "High-density enterprise server racks in a modern data center"
 category: "Software Architecture"
 categorySlug: "architecture"
@@ -11,7 +11,7 @@ readTime: "11 min read"
 author:
   name: "Kasun Perera"
   role: "Principal Systems Architect"
-  avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80"
+  avatar: "/images/authors/author-ishara.jpg"
   handle: "@kasunp"
   bio: "Designs distributed storage engines, low-latency consensus protocols, and resilient multi-region infrastructure. Previously tech lead on edge data topologies."
 tags:

@@ -1,7 +1,7 @@
 ---
 title: "Content-First Typographic Hierarchy: Designing Interfaces That Outlast Redesigns"
 excerpt: "Why eliminating excessive containers, nested card borders, and gratuitous motion elevates content legibility and reduces cognitive strain for power users."
-coverImage: "https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=1000&q=80"
+coverImage: "/images/posts/minimalist-design-systems-that-survive-scale.jpg"
 coverAlt: "Architectural drafting workspace with clean typography and layout books"
 category: "Product & Design"
 categorySlug: "design"
@@ -11,7 +11,7 @@ readTime: "6 min read"
 author:
   name: "Nuwan Senanayake"
   role: "Lead Product Designer"
-  avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80"
+  avatar: "/images/authors/author-ishara.jpg"
   handle: "@nuwans"
   bio: "Researches minimalist user interfaces, typographic density, and content-first web software. Advocate for durable design systems without cosmetic churn."
 tags:

@@ -1,7 +1,7 @@
 ---
 title: "The Lost Art of Deliberate Software Craftsmanship"
 excerpt: "Why high-performing engineering teams prioritize deep, unhurried focus, architectural clarity, and lasting stability over frantic release sprints."
-coverImage: "https://images.unsplash.com/photo-1499750310107-5fef28a66643?auto=format&fit=crop&w=1000&q=80"
+coverImage: "/images/posts/deliberate-engineering-culture-and-craft.jpg"
 coverAlt: "Quiet workspace with notebook, laptop, and cup of coffee representing deliberate focus"
 category: "Engineering Culture"
 categorySlug: "culture"
@@ -11,7 +11,7 @@ readTime: "5 min read"
 author:
   name: "Nuwan Senanayake"
   role: "Lead Product Designer"
-  avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80"
+  avatar: "/images/authors/author-ishara.jpg"
   handle: "@nuwans"
   bio: "Researches minimalist user interfaces, typographic density, and content-first web software. Advocate for durable design systems without cosmetic churn."
 tags:
