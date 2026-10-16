@@ -1,0 +1,118 @@
+---
+import { categories, posts } from '../data/blogData';
+import Icon from './Icon.astro';
+
+const popularPosts = posts.slice(0, 3);
+---
+
+<aside class="flex flex-col gap-10">
+  <!-- Editorial Mission Widget -->
+  <div class="border-t-2 border-neutral-900 pt-5 dark:border-neutral-100">
+    <h3 class="text-xs font-bold uppercase tracking-wider text-neutral-950 dark:text-white mb-3">
+      Editorial Mission
+    </h3>
+    <p class="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed mb-4">
+      <strong class="text-neutral-900 dark:text-white font-medium">The Dispatched</strong> publishes rigorous, long-form technical explorations across computing systems, artificial intelligence, and software craftsmanship.
+    </p>
+    <div class="flex items-center gap-4 text-xs font-semibold text-neutral-900 dark:text-white">
+      <a href="#about" class="hover:underline flex items-center gap-1">
+        <span>About the Board</span>
+        <Icon name="arrow-right" class="w-3.5 h-3.5" />
+      </a>
+      <a href="/rss.xml" class="hover:underline flex items-center gap-1 text-neutral-500 dark:text-neutral-400">
+        <Icon name="rss" class="w-3.5 h-3.5" />
+        <span>Atom / RSS</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Categories Directory with Phosphor Icons -->
+  <div class="border-t border-neutral-200 pt-5 dark:border-neutral-800">
+    <h3 class="text-xs font-bold uppercase tracking-wider text-neutral-950 dark:text-white mb-3">
+      Categories & Domains
+    </h3>
+    <ul class="space-y-2">
+      {categories.map((cat) => (
+        <li>
+          <a
+            href={`/categories/${cat.slug}`}
+            class="flex items-center justify-between text-sm text-neutral-700 hover:text-neutral-950 dark:text-neutral-300 dark:hover:text-white transition-colors group py-1"
+          >
+            <span class="flex items-center gap-2.5">
+              <span class="text-neutral-500 dark:text-neutral-400 group-hover:text-neutral-900 dark:group-hover:text-white">
+                <Icon name={cat.icon} class="w-4 h-4" />
+              </span>
+              <span class="group-hover:underline text-xs sm:text-sm">{cat.name}</span>
+            </span>
+            <span class="text-xs font-mono text-neutral-400 dark:text-neutral-500">
+              {cat.count}
+            </span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </div>
+
+  <!-- Editor's Picks (With Mini Photo Thumbnails) -->
+  <div class="border-t border-neutral-200 pt-5 dark:border-neutral-800">
+    <h3 class="text-xs font-bold uppercase tracking-wider text-neutral-950 dark:text-white mb-4">
+      Editor's Picks
+    </h3>
+    <div class="space-y-4">
+      {popularPosts.map((post) => (
+        <a
+          href={`/posts/${post.slug}`}
+          class="flex items-center gap-3.5 group block"
+        >
+          <img
+            src={post.coverImage}
+            alt={post.coverAlt}
+            class="w-14 h-14 rounded-md object-cover shrink-0 border border-neutral-200/60 dark:border-neutral-800/60"
+            loading="lazy"
+            width="56"
+            height="56"
+          />
+          <div class="flex-1 min-w-0">
+            <div class="text-[10px] uppercase font-semibold text-neutral-500 dark:text-neutral-400 mb-0.5">
+              {post.category}
+            </div>
+            <h4 class="text-xs font-semibold text-neutral-900 dark:text-white leading-snug line-clamp-2 group-hover:underline">
+              {post.title}
+            </h4>
+          </div>
+        </a>
+      ))}
+    </div>
+  </div>
+
+  <!-- Weekly Dispatch Newsletter Container -->
+  <div class="rounded-lg border border-neutral-200 bg-neutral-100/50 p-5 dark:border-neutral-800 dark:bg-neutral-900/30">
+    <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-neutral-950 dark:text-white mb-2">
+      <Icon name="envelope-simple" weight="bold" class="w-4 h-4 text-neutral-950 dark:text-white" />
+      Weekly Dispatch
+    </div>
+    <p class="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed mb-4">
+      A single weekly curated summary of top articles, architectural breakthroughs, and deep-dives.
+    </p>
+
+    <form class="space-y-2" onsubmit="event.preventDefault(); alert('Subscribed to Weekly Dispatch!');">
+      <div>
+        <label for="newsletter-email" class="sr-only">Email address</label>
+        <input
+          id="newsletter-email"
+          type="email"
+          required
+          placeholder="engineer@domain.com"
+          class="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-950 dark:text-white dark:focus:border-white"
+        />
+      </div>
+      <button
+        type="submit"
+        class="w-full inline-flex items-center justify-center gap-2 rounded-md bg-neutral-900 px-3 py-2 text-xs font-semibold text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-100 transition-colors"
+      >
+        <span>Subscribe</span>
+        <Icon name="paper-plane-tilt" class="w-3.5 h-3.5" />
+      </button>
+    </form>
+  </div>
+</aside>

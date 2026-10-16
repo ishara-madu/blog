@@ -1,0 +1,26 @@
+@import "tailwindcss";
+@import "@phosphor-icons/web/regular";
+@import "@phosphor-icons/web/bold";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  :root {
+    --color-bg-canvas: #ffffff;
+    --color-bg-subtle: #f9f9fb;
+    --color-border-subtle: #e5e7eb;
+    color-scheme: light;
+  }
+
+  html.dark {
+    --color-bg-canvas: #09090b;
+    --color-bg-subtle: #121215;
+    --color-border-subtle: #27272a;
+    color-scheme: dark;
+  }
+
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}

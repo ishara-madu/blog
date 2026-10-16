@@ -1,0 +1,306 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import Icon from '../../components/Icon.astro';
+import ArticleCard from '../../components/ArticleCard.astro';
+import { posts, type Post } from '../../data/blogData';
+
+export async function getStaticPaths() {
+  return posts.map((post) => ({
+    params: { slug: post.slug },
+    props: { post },
+  }));
+}
+
+interface Props {
+  post: Post;
+}
+
+const { post } = Astro.props;
+
+// Filter 3 related articles from other posts
+const relatedPosts = posts.filter((p) => p.id !== post.id).slice(0, 3);
+---
+
+<Layout
+  title={`${post.title} — The Dispatched`}
+  description={post.excerpt}
+>
+  <Header />
+
+  <main id="main-content" class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12">
+    <!-- Breadcrumb & Back Link -->
+    <div class="mb-8">
+      <a
+        href="/"
+        class="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-neutral-500 hover:text-neutral-950 dark:text-neutral-400 dark:hover:text-white transition-colors"
+      >
+        <Icon name="arrow-left" class="w-3.5 h-3.5" />
+        <span>Back to Dispatches</span>
+      </a>
+    </div>
+
+    <!-- Article Header -->
+    <header class="max-w-4xl mx-auto mb-10 text-center sm:text-left">
+      <!-- Category & Date Meta (Strictly NO bordered pill boxes) -->
+      <div class="flex flex-wrap items-center justify-center sm:justify-start gap-3 text-xs tracking-wider uppercase mb-4">
+        <span class="inline-flex items-center gap-1.5 font-semibold text-neutral-900 dark:text-neutral-100">
+          <span class={`w-2 h-2 rounded-full ${post.categoryColor}`}></span>
+          {post.category}
+        </span>
+        <span class="text-neutral-300 dark:text-neutral-700">•</span>
+        <span class="inline-flex items-center gap-1 text-neutral-500 dark:text-neutral-400 normal-case font-medium">
+          <Icon name="calendar-blank" class="w-3.5 h-3.5 text-neutral-400" />
+          {post.publishedAt}
+        </span>
+        <span class="text-neutral-300 dark:text-neutral-700">•</span>
+        <span class="inline-flex items-center gap-1 text-neutral-500 dark:text-neutral-400 normal-case font-medium">
+          <Icon name="clock" class="w-3.5 h-3.5 text-neutral-400" />
+          {post.readTime}
+        </span>
+      </div>
+
+      <!-- Main Headline -->
+      <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-neutral-950 dark:text-white leading-[1.18] mb-5">
+        {post.title}
+      </h1>
+
+      <!-- Excerpt Subtitle -->
+      <p class="text-base sm:text-lg text-neutral-600 dark:text-neutral-300 leading-relaxed mb-8">
+        {post.excerpt}
+      </p>
+
+      <!-- Author Bio Line & Interactive Actions -->
+      <div class="flex flex-wrap items-center justify-between gap-4 pt-6 border-t border-neutral-200/80 dark:border-neutral-800/80">
+        <div class="flex items-center gap-3">
+          <img
+            src={post.author.avatar}
+            alt={post.author.name}
+            class="w-11 h-11 rounded-full object-cover ring-1 ring-neutral-200 dark:ring-neutral-800"
+            loading="eager"
+            width="44"
+            height="44"
+          />
+          <div class="text-left">
+            <div class="text-sm font-semibold text-neutral-950 dark:text-white">
+              {post.author.name}
+            </div>
+            <div class="text-xs text-neutral-500 dark:text-neutral-400">
+              {post.author.role} • <span class="font-mono">{post.author.handle}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Utility Actions -->
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            id="share-btn"
+            aria-label="Share article link"
+            class="inline-flex items-center gap-1.5 rounded-md border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800 transition-colors"
+          >
+            <Icon name="share-network" class="w-3.5 h-3.5" />
+            <span id="share-text">Share</span>
+          </button>
+          <button
+            type="button"
+            aria-label="Bookmark article"
+            class="p-2 rounded-md border border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800 transition-colors"
+          >
+            <Icon name="bookmark-simple" class="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Hero Article Cover Photograph -->
+    <div class="max-w-5xl mx-auto mb-14">
+      <div class="overflow-hidden rounded-xl border border-neutral-200/80 dark:border-neutral-800/80 bg-neutral-100 dark:bg-neutral-900">
+        <img
+          src={post.coverImage}
+          alt={post.coverAlt}
+          class="w-full aspect-[21/9] sm:aspect-[2/1] object-cover"
+          loading="eager"
+          decoding="async"
+          fetchpriority="high"
+          width="1600"
+          height="800"
+        />
+      </div>
+      <p class="text-center text-xs text-neutral-400 dark:text-neutral-500 mt-2.5">
+        Illustration & Photography: {post.coverAlt}
+      </p>
+    </div>
+
+    <!-- Article Content Grid (Content + Sticky Table of Contents Sidebar) -->
+    <div class="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+      <!-- Main Prose Body (lg:col-span-8) -->
+      <article class="lg:col-span-8 prose dark:prose-invert max-w-none">
+        <div class="article-body font-sans" set:html={post.content} />
+
+        <!-- Article Tags -->
+        <div class="mt-12 pt-6 border-t border-neutral-200 dark:border-neutral-800">
+          <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-3">
+            Article Tags
+          </div>
+          <div class="flex flex-wrap gap-2">
+            {post.tags.map((tag) => (
+              <span class="inline-flex items-center gap-1 text-xs font-mono text-neutral-600 dark:text-neutral-300">
+                <span class="text-neutral-400 dark:text-neutral-600">#</span>
+                {tag}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <!-- Full Author Spotlight Container -->
+        <div class="mt-10 p-6 rounded-lg border border-neutral-200 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-900/40 flex flex-col sm:flex-row gap-5 items-start">
+          <img
+            src={post.author.avatar}
+            alt={post.author.name}
+            class="w-16 h-16 rounded-full object-cover shrink-0 ring-1 ring-neutral-300 dark:ring-neutral-700"
+            loading="lazy"
+            width="64"
+            height="64"
+          />
+          <div>
+            <div class="text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-1">
+              About the Author
+            </div>
+            <h3 class="text-base font-bold text-neutral-950 dark:text-white">
+              {post.author.name}
+            </h3>
+            <p class="text-xs text-neutral-500 dark:text-neutral-400 mb-2">
+              {post.author.role}
+            </p>
+            <p class="text-xs text-neutral-700 dark:text-neutral-300 leading-relaxed mb-3">
+              {post.author.bio}
+            </p>
+            <a
+              href={`https://x.com/${post.author.handle.replace('@', '')}`}
+              target="_blank"
+              rel="noopener"
+              class="inline-flex items-center gap-1 text-xs font-semibold text-neutral-900 dark:text-white hover:underline"
+            >
+              <span>Follow {post.author.handle}</span>
+              <Icon name="arrow-right" class="w-3.5 h-3.5" />
+            </a>
+          </div>
+        </div>
+      </article>
+
+      <!-- Sticky Outline & Meta Sidebar (lg:col-span-4) -->
+      <aside class="lg:col-span-4 lg:sticky lg:top-24 space-y-8">
+        <!-- Table of Contents -->
+        {post.toc && post.toc.length > 0 && (
+          <div class="border-t-2 border-neutral-900 pt-4 dark:border-neutral-100">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-neutral-950 dark:text-white mb-3">
+              Table of Contents
+            </h4>
+            <nav class="space-y-2">
+              {post.toc.map((item, index) => (
+                <a
+                  href={`#${item.id}`}
+                  class="block text-xs text-neutral-600 hover:text-neutral-950 dark:text-neutral-400 dark:hover:text-white transition-colors py-0.5 line-clamp-1"
+                >
+                  <span class="font-mono text-neutral-400 mr-1.5">{index + 1}.</span>
+                  {item.title}
+                </a>
+              ))}
+            </nav>
+          </div>
+        )}
+
+        <!-- Quick Share & Publication Meta -->
+        <div class="border-t border-neutral-200 pt-4 dark:border-neutral-800 space-y-3">
+          <h4 class="text-xs font-bold uppercase tracking-wider text-neutral-950 dark:text-white">
+            Publication Details
+          </h4>
+          <dl class="space-y-2 text-xs">
+            <div class="flex justify-between">
+              <dt class="text-neutral-500 dark:text-neutral-400">Published</dt>
+              <dd class="text-neutral-900 dark:text-white font-medium">{post.publishedAt}</dd>
+            </div>
+            <div class="flex justify-between">
+              <dt class="text-neutral-500 dark:text-neutral-400">Category</dt>
+              <dd class="text-neutral-900 dark:text-white font-medium">{post.category}</dd>
+            </div>
+            <div class="flex justify-between">
+              <dt class="text-neutral-500 dark:text-neutral-400">Reading Time</dt>
+              <dd class="text-neutral-900 dark:text-white font-medium">{post.readTime}</dd>
+            </div>
+            <div class="flex justify-between">
+              <dt class="text-neutral-500 dark:text-neutral-400">License</dt>
+              <dd class="text-neutral-900 dark:text-white font-medium">CC BY-NC 4.0</dd>
+            </div>
+          </dl>
+        </div>
+
+        <!-- Mini Newsletter Box -->
+        <div class="rounded-lg border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-800 dark:bg-neutral-900/30">
+          <div class="text-xs font-bold uppercase tracking-wider text-neutral-950 dark:text-white mb-1.5">
+            The Weekly Dispatch
+          </div>
+          <p class="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed mb-3">
+            Read by 12,000+ senior architects and system engineers every Sunday.
+          </p>
+          <form class="space-y-2" onsubmit="event.preventDefault(); alert('Subscribed to Weekly Dispatch!');">
+            <input
+              type="email"
+              required
+              placeholder="engineer@domain.com"
+              class="w-full rounded-md border border-neutral-300 bg-white px-2.5 py-1.5 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-950 dark:text-white"
+            />
+            <button
+              type="submit"
+              class="w-full rounded-md bg-neutral-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-100 transition-colors"
+            >
+              Subscribe
+            </button>
+          </form>
+        </div>
+      </aside>
+    </div>
+
+    <!-- Related Articles Section (Continuous Reading) -->
+    <section class="mt-24 border-t border-neutral-200 pt-12 dark:border-neutral-800" aria-label="Related Articles">
+      <div class="mb-8">
+        <h2 class="text-xl font-bold tracking-tight text-neutral-950 dark:text-white">
+          Continue Reading
+        </h2>
+        <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+          Explore related architectural investigations and research papers.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {relatedPosts.map((related) => (
+          <ArticleCard post={related} />
+        ))}
+      </div>
+    </section>
+  </main>
+
+  <Footer />
+</Layout>
+
+<script is:inline>
+  // Vanilla Share Handler (Clipboard API)
+  const shareBtn = document.getElementById('share-btn');
+  const shareText = document.getElementById('share-text');
+
+  if (shareBtn && shareText) {
+    shareBtn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        shareText.textContent = 'Link Copied!';
+        setTimeout(() => {
+          shareText.textContent = 'Share';
+        }, 2000);
+      } catch (err) {
+        console.error('Failed to copy URL:', err);
+      }
+    });
+  }
+</script>

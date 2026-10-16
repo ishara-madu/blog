@@ -1,0 +1,705 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Icon from '../../components/Icon.astro';
+import { posts, categories, authors } from '../../data/blogData';
+---
+
+<Layout
+  title="Editorial Studio & GitHub Storage — The Dispatched"
+  description="Restricted publishing studio for the repository owner to author, edit, and delete articles in GitHub storage."
+>
+  <div class="min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100">
+    <!-- Studio Header Bar -->
+    <header class="border-b border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900 sticky top-0 z-30">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="flex h-16 items-center justify-between gap-4">
+          <!-- Logo & Title -->
+          <div class="flex items-center gap-3">
+            <a href="/" class="flex h-8 w-8 items-center justify-center rounded-md bg-neutral-900 text-white dark:bg-white dark:text-neutral-950 shadow-sm">
+              <Icon name="book-open-text" weight="bold" class="w-4 h-4" />
+            </a>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-bold tracking-tight text-neutral-950 dark:text-white">
+                  The Dispatched Studio
+                </span>
+                <span class="text-[10px] font-mono text-neutral-500 dark:text-neutral-400">
+                  Owner Edition
+                </span>
+              </div>
+              <div class="flex items-center gap-2 text-xs">
+                <!-- Verified Owner Badge -->
+                <div id="owner-badge" class="hidden flex items-center gap-2">
+                  <img id="owner-avatar" src="" alt="Owner" class="w-4 h-4 rounded-full object-cover hidden" />
+                  <span id="owner-name" class="font-bold text-neutral-900 dark:text-white"></span>
+                  <span class="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold text-[11px]">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                    Verified Repo Owner
+                  </span>
+                  <button type="button" id="btn-sign-out" class="text-neutral-400 hover:text-neutral-900 dark:hover:text-white text-[11px] underline ml-1 cursor-pointer">
+                    Sign Out
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Studio Actions -->
+          <div class="flex items-center gap-3 text-xs">
+            <a
+              href="/"
+              target="_blank"
+              class="inline-flex items-center gap-1 text-neutral-600 hover:text-neutral-950 dark:text-neutral-400 dark:hover:text-white font-medium transition-colors"
+            >
+              <span>View Public Site</span>
+              <Icon name="arrow-up-right" class="w-3.5 h-3.5" />
+            </a>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Notification Toast Container -->
+    <div id="toast" class="hidden fixed bottom-6 right-6 z-50 rounded-lg border border-neutral-200 bg-white p-4 shadow-lg dark:border-neutral-800 dark:bg-neutral-900 max-w-md">
+      <div class="flex items-start gap-3">
+        <div id="toast-icon" class="text-emerald-500 shrink-0 mt-0.5">
+          <Icon name="check-circle" weight="bold" class="w-5 h-5" />
+        </div>
+        <div>
+          <div id="toast-title" class="text-xs font-bold text-neutral-950 dark:text-white">Success</div>
+          <div id="toast-message" class="text-xs text-neutral-600 dark:text-neutral-300 mt-0.5">Operation completed successfully.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- =================================================== -->
+    <!-- GATE 1: OWNER ACCESS RESTRICTION LOCK SCREEN       -->
+    <!-- =================================================== -->
+    <div id="auth-gate" class="mx-auto max-w-md px-4 py-16 sm:py-24">
+      <div class="rounded-xl border border-neutral-200 bg-white p-8 dark:border-neutral-800 dark:bg-neutral-900 shadow-sm text-center">
+        <div class="w-12 h-12 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-white flex items-center justify-center mx-auto mb-4">
+          <Icon name="shield-check" weight="bold" class="w-6 h-6" />
+        </div>
+
+        <h1 class="text-xl font-bold tracking-tight text-neutral-950 dark:text-white mb-2">
+          Repository Owner Only
+        </h1>
+        <p class="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed mb-6">
+          Access to this studio is restricted strictly to the verified GitHub repository owner. Authenticate with your GitHub Personal Access Token to manage, write, edit, or delete articles.
+        </p>
+
+        <!-- Auth Error Feedback -->
+        <div id="auth-feedback" class="hidden mb-4 rounded-md border border-rose-200 bg-rose-50 p-3 text-left text-xs text-rose-800 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-200"></div>
+
+        <form id="auth-form" class="space-y-4 text-left">
+          <div>
+            <label for="auth-owner" class="block text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-white mb-1">
+              GitHub Owner / Username <span class="text-rose-500">*</span>
+            </label>
+            <input
+              type="text"
+              id="auth-owner"
+              required
+              placeholder="e.g. your-github-username"
+              class="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-950 dark:text-white font-mono"
+            />
+          </div>
+
+          <div>
+            <label for="auth-repo" class="block text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-white mb-1">
+              Repository Name <span class="text-rose-500">*</span>
+            </label>
+            <input
+              type="text"
+              id="auth-repo"
+              required
+              placeholder="e.g. blog"
+              class="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-950 dark:text-white font-mono"
+            />
+          </div>
+
+          <div>
+            <label for="auth-token" class="block text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-white mb-1">
+              Personal Access Token <span class="text-rose-500">*</span>
+            </label>
+            <input
+              type="password"
+              id="auth-token"
+              required
+              placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+              class="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-950 dark:text-white font-mono"
+            />
+            <p class="text-[11px] text-neutral-500 dark:text-neutral-400 mt-1">
+              Must have <code class="font-mono text-neutral-800 dark:text-neutral-200">repo</code> write permissions. Stored securely in your browser's <code class="font-mono">localStorage</code>.
+            </p>
+          </div>
+
+          <button
+            type="submit"
+            id="btn-auth"
+            class="w-full inline-flex items-center justify-center gap-2 rounded-md bg-neutral-900 py-2.5 text-xs font-semibold text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-100 transition-colors shadow-sm mt-2 cursor-pointer"
+          >
+            <Icon name="lock-key" weight="bold" class="w-4 h-4" />
+            <span>Authenticate as Owner</span>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- =================================================== -->
+    <!-- GATE 2: VERIFIED OWNER STUDIO DASHBOARD            -->
+    <!-- =================================================== -->
+    <main id="studio-app" class="hidden mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+      <!-- Studio Tabs Navigation -->
+      <nav class="flex items-center gap-6 border-b border-neutral-200 dark:border-neutral-800 mb-8 overflow-x-auto no-scrollbar" aria-label="Studio Tabs">
+        <button
+          type="button"
+          id="tab-btn-articles"
+          class="studio-tab active-tab font-semibold text-neutral-950 dark:text-white border-b-2 border-neutral-950 dark:border-white pb-3 whitespace-nowrap transition-colors flex items-center gap-2 text-sm cursor-pointer"
+          data-target="panel-articles"
+        >
+          <Icon name="article" class="w-4 h-4" />
+          <span>Articles Repository ({posts.length})</span>
+        </button>
+
+        <button
+          type="button"
+          id="tab-btn-compose"
+          class="studio-tab text-neutral-500 hover:text-neutral-950 dark:text-neutral-400 dark:hover:text-white border-b-2 border-transparent pb-3 whitespace-nowrap transition-colors flex items-center gap-2 text-sm cursor-pointer"
+          data-target="panel-compose"
+        >
+          <Icon name="pencil-line" class="w-4 h-4" />
+          <span>Article Composer (Create & Edit)</span>
+        </button>
+
+        <button
+          type="button"
+          id="tab-btn-settings"
+          class="studio-tab text-neutral-500 hover:text-neutral-950 dark:text-neutral-400 dark:hover:text-white border-b-2 border-transparent pb-3 whitespace-nowrap transition-colors flex items-center gap-2 text-sm cursor-pointer"
+          data-target="panel-settings"
+        >
+          <Icon name="git-branch" class="w-4 h-4" />
+          <span>GitHub Storage Settings</span>
+        </button>
+      </nav>
+
+      <!-- ========================================== -->
+      <!-- TAB 1: ARTICLES REPOSITORY (FULL CRUD)     -->
+      <!-- ========================================== -->
+      <section id="panel-articles" class="studio-panel space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-lg font-bold tracking-tight text-neutral-950 dark:text-white">
+              Stored Articles Repository
+            </h2>
+            <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+              Articles stored as Markdown with YAML frontmatter in <code class="font-mono text-neutral-800 dark:text-neutral-200">src/content/posts/*.md</code>. As owner, you have full privileges to edit, delete, or add articles.
+            </p>
+          </div>
+          <button
+            type="button"
+            onclick="document.getElementById('tab-btn-compose').click();"
+            class="inline-flex items-center gap-2 rounded-md bg-neutral-900 px-3.5 py-2 text-xs font-semibold text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-100 transition-colors shrink-0 cursor-pointer"
+          >
+            <Icon name="plus" weight="bold" class="w-3.5 h-3.5" />
+            <span>Compose New Monograph</span>
+          </button>
+        </div>
+
+        <!-- Articles Table with Edit & Delete Actions -->
+        <div class="overflow-hidden rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="border-b border-neutral-200 bg-neutral-50 text-neutral-500 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-400 font-semibold uppercase tracking-wider">
+                <tr>
+                  <th scope="col" class="py-3 px-4">Article</th>
+                  <th scope="col" class="py-3 px-4">Domain</th>
+                  <th scope="col" class="py-3 px-4">Author</th>
+                  <th scope="col" class="py-3 px-4">Date</th>
+                  <th scope="col" class="py-3 px-4 text-right">Owner Actions</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-neutral-200/80 dark:divide-neutral-800/80">
+                {posts.map((post) => (
+                  <tr class="hover:bg-neutral-50/60 dark:hover:bg-neutral-800/40 transition-colors">
+                    <!-- Article Title & Thumbnail -->
+                    <td class="py-3.5 px-4">
+                      <div class="flex items-center gap-3">
+                        <img
+                          src={post.coverImage}
+                          alt={post.coverAlt}
+                          class="w-12 h-8 rounded object-cover shrink-0 border border-neutral-200 dark:border-neutral-800"
+                          loading="lazy"
+                          width="48"
+                          height="32"
+                        />
+                        <div class="min-w-0">
+                          <a
+                            href={`/posts/${post.slug}`}
+                            target="_blank"
+                            class="font-semibold text-neutral-950 dark:text-white hover:underline line-clamp-1"
+                          >
+                            {post.title}
+                          </a>
+                          <span class="text-[11px] font-mono text-neutral-400 dark:text-neutral-500">
+                            {post.slug}.md • {post.readTime}
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+
+                    <!-- Category Domain -->
+                    <td class="py-3.5 px-4 whitespace-nowrap">
+                      <span class="inline-flex items-center gap-1.5 font-medium text-neutral-800 dark:text-neutral-200">
+                        <span class={`w-1.5 h-1.5 rounded-full ${post.categoryColor}`}></span>
+                        {post.category}
+                      </span>
+                    </td>
+
+                    <!-- Author -->
+                    <td class="py-3.5 px-4 whitespace-nowrap text-neutral-600 dark:text-neutral-300">
+                      {post.author.name}
+                    </td>
+
+                    <!-- Published Date -->
+                    <td class="py-3.5 px-4 whitespace-nowrap text-neutral-500 dark:text-neutral-400">
+                      {post.publishedAt}
+                    </td>
+
+                    <!-- Owner Actions: Edit, Delete, View -->
+                    <td class="py-3.5 px-4 text-right whitespace-nowrap">
+                      <div class="flex items-center justify-end gap-1.5">
+                        <!-- Edit Button -->
+                        <button
+                          type="button"
+                          class="btn-edit-post p-1.5 rounded hover:bg-neutral-100 text-neutral-600 hover:text-neutral-950 dark:text-neutral-400 dark:hover:text-white transition-colors cursor-pointer"
+                          title="Edit Article"
+                          data-post={Buffer.from(JSON.stringify({
+                            slug: post.slug,
+                            title: post.title,
+                            excerpt: post.excerpt,
+                            coverImage: post.coverImage,
+                            coverAlt: post.coverAlt,
+                            categorySlug: post.categorySlug,
+                            publishedAt: post.publishedAt,
+                            readTime: post.readTime,
+                            tags: post.tags,
+                            content: post.content,
+                          })).toString('base64')}
+                        >
+                          <Icon name="pencil-simple" class="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                        </button>
+
+                        <!-- Delete Button -->
+                        <button
+                          type="button"
+                          class="btn-delete-post p-1.5 rounded hover:bg-neutral-100 text-neutral-600 hover:text-rose-600 dark:text-neutral-400 dark:hover:text-rose-400 transition-colors cursor-pointer"
+                          title="Delete from GitHub"
+                          data-slug={post.slug}
+                          data-title={post.title}
+                        >
+                          <Icon name="trash" class="w-4 h-4 text-rose-500" />
+                        </button>
+
+                        <!-- View Live Post -->
+                        <a
+                          href={`/posts/${post.slug}`}
+                          target="_blank"
+                          class="p-1.5 rounded hover:bg-neutral-100 text-neutral-400 hover:text-neutral-950 dark:hover:text-white transition-colors"
+                          title="View Live Post"
+                        >
+                          <Icon name="arrow-up-right" class="w-4 h-4" />
+                        </a>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- TAB 2: ARTICLE COMPOSER (CREATE & EDIT)    -->
+      <!-- ========================================== -->
+      <section id="panel-compose" class="studio-panel hidden space-y-6">
+        <!-- Edit Mode Header / Indicator -->
+        <div id="composer-mode-badge" class="hidden flex items-center justify-between p-3 rounded-md border border-neutral-200 bg-neutral-100/70 dark:border-neutral-800 dark:bg-neutral-900 text-xs">
+          <div class="flex items-center gap-2 font-semibold text-neutral-900 dark:text-white">
+            <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+            <Icon name="pencil-simple" class="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            <span id="composer-mode-text">Editing Article</span>
+          </div>
+          <button
+            type="button"
+            id="btn-cancel-edit"
+            class="inline-flex items-center gap-1 text-xs text-neutral-600 dark:text-neutral-300 hover:text-neutral-950 dark:hover:text-white underline cursor-pointer"
+          >
+            <Icon name="arrow-counter-clockwise" class="w-3.5 h-3.5" />
+            <span>Cancel Edit / New Article</span>
+          </button>
+        </div>
+
+        <div>
+          <h2 class="text-lg font-bold tracking-tight text-neutral-950 dark:text-white">
+            Monograph Authoring Studio
+          </h2>
+          <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+            Compose Markdown content with YAML frontmatter. Commits directly to your GitHub repository storage.
+          </p>
+        </div>
+
+        <form id="composer-form" class="space-y-6">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            <!-- Left Form Fields (lg:col-span-8) -->
+            <div class="lg:col-span-8 space-y-5">
+              <!-- Title -->
+              <div>
+                <label for="post-title" class="block text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-white mb-1.5">
+                  Article Title <span class="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="post-title"
+                  required
+                  placeholder="e.g. Distributed Consensus in Asynchronous Edge Networks"
+                  class="w-full rounded-md border border-neutral-300 bg-white px-3.5 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-900 dark:text-white dark:focus:border-white"
+                />
+              </div>
+
+              <!-- Slug & Reading Time Row -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label for="post-slug" class="block text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-white mb-1.5">
+                    URL Slug <span class="text-rose-500">*</span>
+                  </label>
+                  <div class="flex rounded-md border border-neutral-300 bg-white dark:border-neutral-700 dark:bg-neutral-900 overflow-hidden">
+                    <span class="inline-flex items-center px-3 text-xs font-mono text-neutral-400 border-r border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950">
+                      /posts/
+                    </span>
+                    <input
+                      type="text"
+                      id="post-slug"
+                      required
+                      placeholder="distributed-consensus-edge"
+                      class="w-full px-3 py-2 text-xs font-mono text-neutral-900 placeholder:text-neutral-400 focus:outline-none dark:bg-neutral-900 dark:text-white"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label for="post-readtime" class="block text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-white mb-1.5">
+                    Estimated Reading Time
+                  </label>
+                  <input
+                    type="text"
+                    id="post-readtime"
+                    value="6 min read"
+                    class="w-full rounded-md border border-neutral-300 bg-white px-3.5 py-2 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <!-- Excerpt -->
+              <div>
+                <label for="post-excerpt" class="block text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-white mb-1.5">
+                  Summary / Excerpt <span class="text-rose-500">*</span>
+                </label>
+                <textarea
+                  id="post-excerpt"
+                  required
+                  rows="2"
+                  placeholder="A concise two-sentence summary of the investigation, key metrics, and takeaways..."
+                  class="w-full rounded-md border border-neutral-300 bg-white px-3.5 py-2 text-xs leading-relaxed text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
+                ></textarea>
+              </div>
+
+              <!-- Markdown Editor & Toolbar -->
+              <div>
+                <div class="flex items-center justify-between mb-1.5">
+                  <label for="post-content" class="block text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-white">
+                    Article Body (Markdown) <span class="text-rose-500">*</span>
+                  </label>
+                  <span id="word-count" class="text-[11px] font-mono text-neutral-400">0 words</span>
+                </div>
+
+                <!-- Formatting Toolbar -->
+                <div class="flex flex-wrap items-center gap-1 border border-b-0 border-neutral-300 bg-neutral-100/70 p-1.5 rounded-t-md dark:border-neutral-700 dark:bg-neutral-800/60 text-xs">
+                  <button type="button" class="toolbar-btn p-1.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 cursor-pointer" data-format="bold" title="Bold">
+                    <Icon name="text-b" class="w-4 h-4" />
+                  </button>
+                  <button type="button" class="toolbar-btn p-1.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 cursor-pointer" data-format="italic" title="Italic">
+                    <Icon name="text-italic" class="w-4 h-4" />
+                  </button>
+                  <span class="w-px h-4 bg-neutral-300 dark:bg-neutral-700 mx-1"></span>
+                  <button type="button" class="toolbar-btn p-1.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 cursor-pointer" data-format="h2" title="Heading 2">
+                    <Icon name="text-h-two" class="w-4 h-4" />
+                  </button>
+                  <button type="button" class="toolbar-btn p-1.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 cursor-pointer" data-format="h3" title="Heading 3">
+                    <Icon name="text-h-three" class="w-4 h-4" />
+                  </button>
+                  <span class="w-px h-4 bg-neutral-300 dark:bg-neutral-700 mx-1"></span>
+                  <button type="button" class="toolbar-btn p-1.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 cursor-pointer" data-format="quote" title="Quote">
+                    <Icon name="quotes" class="w-4 h-4" />
+                  </button>
+                  <button type="button" class="toolbar-btn p-1.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 cursor-pointer" data-format="code" title="Code Block">
+                    <Icon name="code" class="w-4 h-4" />
+                  </button>
+                  <button type="button" class="toolbar-btn p-1.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 cursor-pointer" data-format="link" title="Link">
+                    <Icon name="link" class="w-4 h-4" />
+                  </button>
+                </div>
+
+                <!-- Textarea -->
+                <textarea
+                  id="post-content"
+                  required
+                  rows="14"
+                  placeholder="Write your article in Markdown. Use ## for section headings, ``` for code snippets..."
+                  class="w-full rounded-b-md border border-neutral-300 bg-white p-3.5 font-mono text-xs leading-relaxed text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
+                ></textarea>
+              </div>
+            </div>
+
+            <!-- Right Sidebar Controls (lg:col-span-4) -->
+            <div class="lg:col-span-4 space-y-6">
+              <!-- Category Selector -->
+              <div class="rounded-lg border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900 space-y-4">
+                <div>
+                  <label for="post-category" class="block text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-white mb-1.5">
+                    Editorial Domain <span class="text-rose-500">*</span>
+                  </label>
+                  <select
+                    id="post-category"
+                    required
+                    class="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-xs text-neutral-900 focus:border-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-950 dark:text-white"
+                  >
+                    {categories.map((cat) => (
+                      <option value={cat.slug} data-color={cat.color} data-name={cat.name}>
+                        {cat.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <!-- Author Selector -->
+                <div>
+                  <label for="post-author" class="block text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-white mb-1.5">
+                    Lead Author <span class="text-rose-500">*</span>
+                  </label>
+                  <select
+                    id="post-author"
+                    required
+                    class="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-xs text-neutral-900 focus:border-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-950 dark:text-white"
+                  >
+                    {Object.entries(authors).map(([key, author]) => (
+                      <option
+                        value={key}
+                        data-name={author.name}
+                        data-role={author.role}
+                        data-avatar={author.avatar}
+                        data-handle={author.handle}
+                        data-bio={author.bio}
+                      >
+                        {author.name} ({author.role})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <!-- Tags -->
+                <div>
+                  <label for="post-tags" class="block text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-white mb-1.5">
+                    Tags (Comma-Separated)
+                  </label>
+                  <input
+                    type="text"
+                    id="post-tags"
+                    placeholder="Distributed SQL, Edge Compute, Consensus"
+                    class="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-950 dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <!-- Cover Image & Live Preview Box -->
+              <div class="rounded-lg border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900 space-y-3">
+                <label for="post-image" class="block text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-white">
+                  Cover Photography URL
+                </label>
+                <input
+                  type="url"
+                  id="post-image"
+                  placeholder="https://images.unsplash.com/photo-..."
+                  class="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-950 dark:text-white"
+                />
+
+                <input
+                  type="text"
+                  id="post-image-alt"
+                  placeholder="Cover photo description / caption"
+                  class="w-full rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-950 dark:text-white"
+                />
+
+                <!-- Live Cover Image Preview Box -->
+                <div class="overflow-hidden rounded-md border border-neutral-200 bg-neutral-100 aspect-[16/10] dark:border-neutral-800 dark:bg-neutral-950 flex items-center justify-center text-neutral-400 text-xs">
+                  <img
+                    id="cover-preview"
+                    src=""
+                    alt="Preview"
+                    class="w-full h-full object-cover hidden"
+                  />
+                  <span id="cover-placeholder" class="flex flex-col items-center gap-1">
+                    <Icon name="image" class="w-6 h-6" />
+                    <span>Image Preview</span>
+                  </span>
+                </div>
+              </div>
+
+              <!-- Commit & Export Actions -->
+              <div class="space-y-3">
+                <button
+                  type="submit"
+                  id="btn-commit-github"
+                  class="w-full inline-flex items-center justify-center gap-2 rounded-md bg-neutral-900 px-4 py-2.5 text-xs font-semibold text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-100 transition-colors shadow-sm cursor-pointer"
+                >
+                  <Icon name="cloud-arrow-up" weight="bold" class="w-4 h-4" />
+                  <span id="submit-btn-text">Commit Directly to GitHub</span>
+                </button>
+
+                <div class="flex gap-2">
+                  <button
+                    type="button"
+                    id="btn-copy-markdown"
+                    class="flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border border-neutral-300 bg-white px-3 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+                  >
+                    <Icon name="copy" class="w-3.5 h-3.5" />
+                    <span>Copy Markdown</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    id="btn-download-md"
+                    class="flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border border-neutral-300 bg-white px-3 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+                  >
+                    <Icon name="download-simple" class="w-3.5 h-3.5" />
+                    <span>Download .md</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- TAB 3: GITHUB STORAGE SETTINGS             -->
+      <!-- ========================================== -->
+      <section id="panel-settings" class="studio-panel hidden space-y-8 max-w-3xl">
+        <div>
+          <h2 class="text-lg font-bold tracking-tight text-neutral-950 dark:text-white">
+            GitHub Repository Storage Configuration
+          </h2>
+          <p class="text-xs text-neutral-600 dark:text-neutral-300 mt-1 leading-relaxed">
+            Verify or update your GitHub repository connection parameters.
+          </p>
+        </div>
+
+        <form id="github-settings-form" class="space-y-5 rounded-lg border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label for="gh-owner" class="block text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-white mb-1.5">
+                GitHub Owner / Username <span class="text-rose-500">*</span>
+              </label>
+              <input
+                type="text"
+                id="gh-owner"
+                required
+                placeholder="e.g. your-github-username"
+                class="w-full rounded-md border border-neutral-300 bg-white px-3.5 py-2 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-950 dark:text-white font-mono"
+              />
+            </div>
+
+            <div>
+              <label for="gh-repo" class="block text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-white mb-1.5">
+                Repository Name <span class="text-rose-500">*</span>
+              </label>
+              <input
+                type="text"
+                id="gh-repo"
+                required
+                placeholder="e.g. blog"
+                class="w-full rounded-md border border-neutral-300 bg-white px-3.5 py-2 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-950 dark:text-white font-mono"
+              />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label for="gh-branch" class="block text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-white mb-1.5">
+                Branch
+              </label>
+              <input
+                type="text"
+                id="gh-branch"
+                value="main"
+                class="w-full rounded-md border border-neutral-300 bg-white px-3.5 py-2 text-xs text-neutral-900 focus:border-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-950 dark:text-white font-mono"
+              />
+            </div>
+
+            <div>
+              <label for="gh-path" class="block text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-white mb-1.5">
+                Content Directory Path
+              </label>
+              <input
+                type="text"
+                id="gh-path"
+                value="src/content/posts"
+                class="w-full rounded-md border border-neutral-300 bg-white px-3.5 py-2 text-xs text-neutral-900 focus:border-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-950 dark:text-white font-mono"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label for="gh-token" class="block text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-white mb-1.5">
+              GitHub Personal Access Token <span class="text-rose-500">*</span>
+            </label>
+            <input
+              type="password"
+              id="gh-token"
+              required
+              placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+              class="w-full rounded-md border border-neutral-300 bg-white px-3.5 py-2 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-950 dark:text-white font-mono"
+            />
+          </div>
+
+          <!-- Test Connection Feedback Box -->
+          <div id="test-feedback" class="hidden rounded-md border p-3.5 text-xs">
+            <div id="test-message"></div>
+          </div>
+
+          <div class="flex items-center gap-3 pt-2">
+            <button
+              type="button"
+              id="btn-test-connection"
+              class="inline-flex items-center gap-1.5 rounded-md border border-neutral-300 bg-white px-3.5 py-2 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+            >
+              <Icon name="plugs-connected" class="w-4 h-4" />
+              <span>Test Connection</span>
+            </button>
+
+            <button
+              type="submit"
+              class="inline-flex items-center gap-1.5 rounded-md bg-neutral-900 px-4 py-2 text-xs font-semibold text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-100 transition-colors cursor-pointer"
+            >
+              <Icon name="floppy-disk" class="w-4 h-4" />
+              <span>Save GitHub Settings</span>
+            </button>
+          </div>
+        </form>
+      </section>
+    </main>
+  </div>
+</Layout>
+
+<script src="/admin-studio.js" is:inline></script>

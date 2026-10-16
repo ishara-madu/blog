@@ -1,0 +1,48 @@
+---
+import fs from 'node:fs';
+import path from 'node:path';
+
+interface Props {
+  name: string;
+  weight?: 'regular' | 'bold' | 'fill' | 'light' | 'thin' | 'duotone';
+  size?: number | string;
+  class?: string;
+  'aria-hidden'?: 'true' | 'false';
+}
+
+const {
+  name,
+  weight = 'regular',
+  size = 20,
+  class: className = '',
+  'aria-hidden': ariaHidden = 'true',
+} = Astro.props;
+
+// Normalize icon name (strip ph- prefix if passed)
+const cleanName = name.replace(/^ph-/, '');
+
+// Attempt to load direct SVG from @phosphor-icons/core for zero runtime flash and crisp vector scaling
+const assetPath = path.resolve(
+  process.cwd(),
+  `node_modules/@phosphor-icons/core/assets/${weight}/${cleanName}.svg`
+);
+
+let renderedSvg = '';
+if (fs.existsSync(assetPath)) {
+  const rawSvg = fs.readFileSync(assetPath, 'utf-8');
+  // Inject class, size, and aria-hidden cleanly
+  renderedSvg = rawSvg.replace(
+    '<svg ',
+    `<svg class="${className}" width="${size}" height="${size}" aria-hidden="${ariaHidden}" `
+  );
+}
+---
+
+{renderedSvg ? (
+  <Fragment set:html={renderedSvg} />
+) : (
+  <i
+    class={`ph ${weight !== 'regular' ? `ph-${weight}` : ''} ph-${cleanName} ${className}`.trim()}
+    aria-hidden={ariaHidden}
+  ></i>
+)}
