@@ -465,25 +465,76 @@ deleteButtons.forEach((btn) => {
     btn.disabled = true;
 
     try {
-      // Send DELETE request to /api/admin/posts (removes local file and syncs with GitHub)
-      const delRes = await fetch('/api/admin/posts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'delete',
-          slug,
-          title,
-          token: session.token,
-          branch: session.branch || 'main',
-        }),
-      });
+      let isDeleted = false;
+      let deleteNotice = '';
 
-      const resData = await delRes.json().catch(() => ({}));
+      // 1. Try local server endpoint /api/admin/posts (handles local disk + GitHub sync)
+      try {
+        const delRes = await fetch('/api/admin/posts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'delete',
+            slug,
+            title,
+            token: session.token,
+            branch: session.branch || 'main',
+          }),
+        });
 
-      if (delRes.ok && resData.success) {
-        showToast('Article Deleted', `Successfully deleted "${slug}.md" from local storage and GitHub repository.`);
+        const resData = await delRes.json().catch(() => ({}));
+        if (delRes.ok && resData.success) {
+          isDeleted = true;
+          deleteNotice = `Successfully deleted "${slug}.md" from storage.`;
+        }
+      } catch (localErr) {
+        // Local endpoint not available (e.g. static Cloudflare Pages)
+      }
+
+      // 2. Direct GitHub API fallback (for Cloudflare Pages edge deployments)
+      if (!isDeleted) {
+        const cleanPrefix = (session.pathPrefix || 'src/content/posts').replace(/^\/+|\/+$/g, '');
+        const filePath = `${cleanPrefix}/${slug}.md`;
+        const checkRes = await fetch(
+          `https://api.github.com/repos/${session.owner}/${session.repo}/contents/${filePath}?ref=${session.branch || 'main'}`,
+          {
+            headers: {
+              Accept: 'application/vnd.github.v3+json',
+              Authorization: `Bearer ${session.token}`,
+            },
+          }
+        );
+
+        if (checkRes.ok) {
+          const fileData = await checkRes.json();
+          const ghDelRes = await fetch(
+            `https://api.github.com/repos/${session.owner}/${session.repo}/contents/${filePath}`,
+            {
+              method: 'DELETE',
+              headers: {
+                Accept: 'application/vnd.github.v3+json',
+                Authorization: `Bearer ${session.token}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                message: `Delete article: ${slug}.md (by @${session.username})`,
+                sha: fileData.sha,
+                branch: session.branch || 'main',
+              }),
+            }
+          );
+          if (ghDelRes.ok) {
+            isDeleted = true;
+            deleteNotice = `Successfully deleted "${slug}.md" from GitHub storage.`;
+          }
+        } else if (checkRes.status === 404) {
+          isDeleted = true;
+          deleteNotice = `Already removed from GitHub storage.`;
+        }
+      }
+
+      if (isDeleted) {
+        showToast('Article Deleted', deleteNotice);
         // Remove row smoothly from DOM
         const tr = btn.closest('tr');
         if (tr) {
@@ -492,7 +543,7 @@ deleteButtons.forEach((btn) => {
           setTimeout(() => tr.remove(), 250);
         }
       } else {
-        showToast('Delete Failed', resData.error || resData.githubMessage || 'Could not delete article', true);
+        showToast('Delete Failed', 'Could not delete article from storage.', true);
       }
     } catch (err) {
       showToast('Network Error', err.message, true);
@@ -719,36 +770,89 @@ if (composerForm) {
     btnCommit.innerText = 'Saving & Committing...';
 
     try {
-      // Call /api/admin/posts to write locally and commit to GitHub
-      const res = await fetch('/api/admin/posts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'save',
-          slug: data.slug,
-          title: data.title,
-          markdown: data.markdown,
-          token: session.token,
-          branch: session.branch || 'main',
-        }),
-      });
+      let isSaved = false;
+      let saveNotice = '';
 
-      const resData = await res.json().catch(() => ({}));
+      // 1. Try local server endpoint /api/admin/posts
+      try {
+        const res = await fetch('/api/admin/posts', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: 'save',
+            slug: data.slug,
+            title: data.title,
+            markdown: data.markdown,
+            token: session.token,
+            branch: session.branch || 'main',
+          }),
+        });
 
-      if (res.ok && resData.success) {
-        showToast(
-          'Article Published & Synced!',
-          resData.githubCommitted
+        const resData = await res.json().catch(() => ({}));
+        if (res.ok && resData.success) {
+          isSaved = true;
+          saveNotice = resData.githubCommitted
             ? `Successfully saved "${data.slug}.md" locally and committed to GitHub storage!`
-            : `Saved locally. (${resData.githubMessage || 'GitHub commit synced.'})`
+            : `Saved locally. (${resData.githubMessage || 'GitHub commit synced.'})`;
+        }
+      } catch (localErr) {
+        // Local endpoint not available
+      }
+
+      // 2. Direct GitHub API fallback (for Cloudflare Pages edge deployments)
+      if (!isSaved) {
+        const cleanPrefix = (session.pathPrefix || 'src/content/posts').replace(/^\/+|\/+$/g, '');
+        const filePath = `${cleanPrefix}/${data.slug}.md`;
+        const encoded = btoa(unescape(encodeURIComponent(data.markdown)));
+
+        let sha;
+        const checkRes = await fetch(
+          `https://api.github.com/repos/${session.owner}/${session.repo}/contents/${filePath}?ref=${session.branch || 'main'}`,
+          {
+            headers: {
+              Accept: 'application/vnd.github.v3+json',
+              Authorization: `Bearer ${session.token}`,
+            },
+          }
         );
+        if (checkRes.ok) {
+          const existing = await checkRes.json();
+          sha = existing.sha;
+        }
+
+        const actionVerb = sha ? 'Update' : 'Publish';
+        const commitRes = await fetch(
+          `https://api.github.com/repos/${session.owner}/${session.repo}/contents/${filePath}`,
+          {
+            method: 'PUT',
+            headers: {
+              Accept: 'application/vnd.github.v3+json',
+              Authorization: `Bearer ${session.token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              message: `${actionVerb} article: ${data.title} (by @${session.username})`,
+              content: encoded,
+              branch: session.branch || 'main',
+              ...(sha ? { sha } : {}),
+            }),
+          }
+        );
+
+        if (commitRes.ok) {
+          isSaved = true;
+          saveNotice = `Successfully committed "${data.slug}.md" directly to GitHub storage!`;
+        }
+      }
+
+      if (isSaved) {
+        showToast('Article Published & Synced!', saveNotice);
         resetComposer();
-        // Reload list after brief moment to reflect changes in table
         setTimeout(() => window.location.reload(), 1200);
       } else {
-        showToast('Save Failed', resData.error || resData.githubMessage || 'Could not save article.', true);
+        showToast('Save Failed', 'Could not save article to storage.', true);
       }
     } catch (err) {
       showToast('Network Error', err.message, true);

@@ -12,6 +12,7 @@
     "astro": "astro"
   },
   "dependencies": {
+    "@astrojs/cloudflare": "^14.4.0",
     "@astrojs/node": "^11.1.7",
     "@phosphor-icons/web": "^2.1.2",
     "astro": "^7.4.0"
