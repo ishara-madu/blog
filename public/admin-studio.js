@@ -204,9 +204,9 @@ if (authForm) {
       const authenticatedUser = userData.login;
 
       // 2. Strict Owner Verification: must be @ishara-madu
-      const isDirectOwner = authenticatedUser.toLowerCase() === 'ishara-madu';
+      const isOwner = authenticatedUser.toLowerCase() === 'ishara-madu';
 
-      if (!isDirectOwner) {
+      if (!isOwner) {
         showAuthNotice(
           false,
           `Access Denied: You authenticated as @${authenticatedUser}. Only @ishara-madu is permitted to create, edit, or delete articles in https://github.com/ishara-madu/blog.`
@@ -235,12 +235,9 @@ if (authForm) {
       const repoData = await repoRes.json();
       const repoOwner = repoData.owner?.login || owner;
       const permissions = repoData.permissions || {};
+      const hasAdminRights = Boolean(permissions.admin || isOwner);
 
-      // 3. Check ownership: username must match repo owner, or have admin permissions
-      const isDirectOwner = authenticatedUser.toLowerCase() === repoOwner.toLowerCase();
-      const hasAdminRights = Boolean(permissions.admin || isDirectOwner);
-
-      if (!isDirectOwner && !hasAdminRights) {
+      if (!isOwner && !hasAdminRights) {
         showAuthNotice(
           false,
           `Access Denied: You authenticated as @${authenticatedUser}, but this repository is owned by @${repoOwner}. Only the repository owner can create, edit, or delete articles.`
