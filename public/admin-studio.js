@@ -459,63 +459,40 @@ deleteButtons.forEach((btn) => {
     const slug = btn.getAttribute('data-slug');
     const title = btn.getAttribute('data-title');
 
-    const confirmed = confirm(`Are you sure you want to permanently delete this article from GitHub storage?\n\n"${title}" (${slug}.md)`);
+    const confirmed = confirm(`Are you sure you want to permanently delete this article from local storage and GitHub repository?\n\n"${title}" (${slug}.md)`);
     if (!confirmed) return;
 
     btn.disabled = true;
-    const cleanPrefix = (session.pathPrefix || 'src/content/posts').replace(/^\/+|\/+$/g, '');
-    const filePath = `${cleanPrefix}/${slug}.md`;
 
     try {
-      // 1. Get SHA of file in GitHub repo
-      const checkRes = await fetch(
-        `https://api.github.com/repos/${session.owner}/${session.repo}/contents/${filePath}?ref=${session.branch || 'main'}`,
-        {
-          headers: {
-            Accept: 'application/vnd.github.v3+json',
-            Authorization: `Bearer ${session.token}`,
-          },
-        }
-      );
+      // Send DELETE request to /api/admin/posts (removes local file and syncs with GitHub)
+      const delRes = await fetch('/api/admin/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'delete',
+          slug,
+          title,
+          token: session.token,
+          branch: session.branch || 'main',
+        }),
+      });
 
-      if (!checkRes.ok) {
-        showToast('File Not Found on GitHub', `Could not find ${filePath} in repository.`, true);
-        btn.disabled = false;
-        return;
-      }
+      const resData = await delRes.json().catch(() => ({}));
 
-      const fileData = await checkRes.json();
-      const sha = fileData.sha;
-
-      // 2. Send DELETE request to GitHub Contents API
-      const delRes = await fetch(
-        `https://api.github.com/repos/${session.owner}/${session.repo}/contents/${filePath}`,
-        {
-          method: 'DELETE',
-          headers: {
-            Accept: 'application/vnd.github.v3+json',
-            Authorization: `Bearer ${session.token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            message: `Delete article: ${slug}.md (by @${session.username})`,
-            sha,
-            branch: session.branch || 'main',
-          }),
-        }
-      );
-
-      if (delRes.ok) {
-        showToast('Article Deleted', `Successfully deleted ${slug}.md from GitHub storage.`);
-        // Hide or remove row from DOM
+      if (delRes.ok && resData.success) {
+        showToast('Article Deleted', `Successfully deleted "${slug}.md" from local storage and GitHub repository.`);
+        // Remove row smoothly from DOM
         const tr = btn.closest('tr');
         if (tr) {
-          tr.style.opacity = '0.3';
-          tr.style.textDecoration = 'line-through';
+          tr.style.opacity = '0';
+          tr.style.transform = 'scale(0.98)';
+          setTimeout(() => tr.remove(), 250);
         }
       } else {
-        const err = await delRes.json().catch(() => ({}));
-        showToast('Delete Failed', err.message || delRes.statusText, true);
+        showToast('Delete Failed', resData.error || resData.githubMessage || 'Could not delete article', true);
       }
     } catch (err) {
       showToast('Network Error', err.message, true);
@@ -739,58 +716,39 @@ if (composerForm) {
 
     const data = buildMarkdownData();
     btnCommit.disabled = true;
-    btnCommit.innerText = 'Committing to GitHub...';
-
-    const cleanPrefix = (session.pathPrefix || 'src/content/posts').replace(/^\/+|\/+$/g, '');
-    const filePath = `${cleanPrefix}/${data.slug}.md`;
-    const encoded = btoa(unescape(encodeURIComponent(data.markdown)));
+    btnCommit.innerText = 'Saving & Committing...';
 
     try {
-      // 1. Check for existing SHA
-      let sha;
-      const checkRes = await fetch(
-        `https://api.github.com/repos/${session.owner}/${session.repo}/contents/${filePath}?ref=${session.branch || 'main'}`,
-        {
-          headers: {
-            Accept: 'application/vnd.github.v3+json',
-            Authorization: `Bearer ${session.token}`,
-          },
-        }
-      );
-      if (checkRes.ok) {
-        const existing = await checkRes.json();
-        sha = existing.sha;
-      }
+      // Call /api/admin/posts to write locally and commit to GitHub
+      const res = await fetch('/api/admin/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'save',
+          slug: data.slug,
+          title: data.title,
+          markdown: data.markdown,
+          token: session.token,
+          branch: session.branch || 'main',
+        }),
+      });
 
-      // 2. Put file to GitHub (Commit)
-      const actionVerb = sha ? 'Update' : 'Publish';
-      const commitRes = await fetch(
-        `https://api.github.com/repos/${session.owner}/${session.repo}/contents/${filePath}`,
-        {
-          method: 'PUT',
-          headers: {
-            Accept: 'application/vnd.github.v3+json',
-            Authorization: `Bearer ${session.token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            message: `${actionVerb} article: ${data.title} (by @${session.username})`,
-            content: encoded,
-            branch: session.branch || 'main',
-            ...(sha ? { sha } : {}),
-          }),
-        }
-      );
+      const resData = await res.json().catch(() => ({}));
 
-      if (commitRes.ok) {
+      if (res.ok && resData.success) {
         showToast(
-          'Committed to GitHub Storage!',
-          `Successfully ${actionVerb.toLowerCase()}d ${filePath} to branch ${session.branch || 'main'}.`
+          'Article Published & Synced!',
+          resData.githubCommitted
+            ? `Successfully saved "${data.slug}.md" locally and committed to GitHub storage!`
+            : `Saved locally. (${resData.githubMessage || 'GitHub commit synced.'})`
         );
         resetComposer();
+        // Reload list after brief moment to reflect changes in table
+        setTimeout(() => window.location.reload(), 1200);
       } else {
-        const errData = await commitRes.json().catch(() => ({}));
-        showToast('Commit Error', errData.message || commitRes.statusText, true);
+        showToast('Save Failed', resData.error || resData.githubMessage || 'Could not save article.', true);
       }
     } catch (err) {
       showToast('Network Error', err.message, true);
