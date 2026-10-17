@@ -113,97 +113,73 @@ import { posts, categories, authors } from '../../data/blogData';
           </button>
         </div>
 
-        <!-- PRIMARY: 1-CLICK GITHUB LOGIN BUTTON -->
-        <div class="space-y-3">
-          <a
-            href="/api/auth/github"
-            id="btn-oauth-login"
-            class="w-full inline-flex items-center justify-center gap-2.5 rounded-md bg-neutral-950 py-3 px-4 text-xs font-semibold text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-950 dark:hover:bg-neutral-100 transition-colors shadow-sm cursor-pointer"
-          >
-            <Icon name="github-logo" weight="bold" class="w-4 h-4" />
-            <span>Sign in with GitHub as @ishara-madu (1-Click)</span>
-          </a>
-
-          <p class="text-[11px] text-neutral-500 dark:text-neutral-400">
-            Verifies GitHub account and confirms ownership on <span class="font-mono">ishara-madu/blog</span>.
-          </p>
-        </div>
-
-        <!-- Subtle Divider for Manual / Custom Fallback -->
-        <div class="relative my-6">
-          <div class="absolute inset-0 flex items-center">
-            <div class="w-full border-t border-neutral-200 dark:border-neutral-800"></div>
-          </div>
-          <div class="relative flex justify-center text-xs">
-            <span class="bg-white dark:bg-neutral-900 px-2 text-neutral-400">or use manual token</span>
-          </div>
-        </div>
-
-        <!-- Collapsible Manual Form Toggle -->
-        <button
-          type="button"
-          id="toggle-manual-auth"
-          class="inline-flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white underline cursor-pointer"
-        >
-          <Icon name="key" class="w-3.5 h-3.5" />
-          <span id="toggle-manual-text">Manual Token / Custom Repository Settings</span>
-        </button>
-
-        <!-- Manual Token Form (Hidden by default, shown on toggle) -->
-        <form id="auth-form" class="hidden mt-4 space-y-4 text-left border-t border-neutral-200 dark:border-neutral-800 pt-4">
-          <div>
-            <label for="auth-owner" class="block text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-white mb-1">
-              GitHub Owner / Username <span class="text-rose-500">*</span>
-            </label>
-            <input
-              type="text"
-              id="auth-owner"
-              required
-              value="ishara-madu"
-              placeholder="e.g. ishara-madu"
-              class="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-950 dark:text-white font-mono"
-            />
-          </div>
+        <!-- DIRECT TOKEN LOGIN FORM (Works seamlessly on Cloudflare Pages and Local) -->
+        <form id="auth-form" class="space-y-4 text-left">
+          <input type="hidden" id="auth-owner" value="ishara-madu" />
+          <input type="hidden" id="auth-repo" value="blog" />
 
           <div>
-            <label for="auth-repo" class="block text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-white mb-1">
-              Repository Name <span class="text-rose-500">*</span>
-            </label>
-            <input
-              type="text"
-              id="auth-repo"
-              required
-              value="blog"
-              placeholder="e.g. blog"
-              class="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-950 dark:text-white font-mono"
-            />
-          </div>
-
-          <div>
-            <label for="auth-token" class="block text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-white mb-1">
-              Personal Access Token <span class="text-rose-500">*</span>
-            </label>
+            <div class="flex items-center justify-between mb-1.5">
+              <label for="auth-token" class="block text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-white">
+                GitHub Access Token <span class="text-rose-500">*</span>
+              </label>
+              <a
+                href="https://github.com/settings/tokens/new?scopes=repo&description=TheDispatched-Blog-Studio"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="text-[11px] text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white underline inline-flex items-center gap-1"
+              >
+                <span>Generate Token</span>
+                <Icon name="arrow-up-right" class="w-3 h-3" />
+              </a>
+            </div>
             <input
               type="password"
               id="auth-token"
               required
               placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-              class="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-950 dark:text-white font-mono"
+              class="w-full rounded-md border border-neutral-300 bg-white px-3 py-2.5 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-950 dark:text-white font-mono shadow-sm"
             />
-            <p class="text-[11px] text-neutral-500 dark:text-neutral-400 mt-1">
-              Must have <code class="font-mono text-neutral-800 dark:text-neutral-200">repo</code> write permissions. Stored securely in your browser's <code class="font-mono">localStorage</code>.
+            <p class="text-[11px] text-neutral-500 dark:text-neutral-400 mt-1.5 leading-relaxed">
+              Required for <strong class="text-neutral-700 dark:text-neutral-300">@ishara-madu</strong> to publish and delete articles. Saved securely in your browser's <code class="font-mono">localStorage</code> for 1-click access later.
             </p>
           </div>
 
           <button
             type="submit"
             id="btn-auth"
-            class="w-full inline-flex items-center justify-center gap-2 rounded-md bg-neutral-900 py-2.5 text-xs font-semibold text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-100 transition-colors shadow-sm mt-2 cursor-pointer"
+            class="w-full inline-flex items-center justify-center gap-2 rounded-md bg-neutral-950 py-2.5 text-xs font-semibold text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-950 dark:hover:bg-neutral-100 transition-colors shadow-sm cursor-pointer"
           >
             <Icon name="lock-key" weight="bold" class="w-4 h-4" />
-            <span>Verify & Authenticate Token</span>
+            <span>Verify & Enter Studio</span>
           </button>
         </form>
+
+        <!-- Subtle Divider -->
+        <div class="relative my-6">
+          <div class="absolute inset-0 flex items-center">
+            <div class="w-full border-t border-neutral-200 dark:border-neutral-800"></div>
+          </div>
+          <div class="relative flex justify-center text-xs">
+            <span class="bg-white dark:bg-neutral-900 px-2 text-neutral-400">or 1-click server sign-in</span>
+          </div>
+        </div>
+
+        <!-- 1-CLICK SERVER GITHUB LOGIN BUTTON -->
+        <div class="space-y-2">
+          <a
+            href="/api/auth/github"
+            id="btn-oauth-login"
+            class="w-full inline-flex items-center justify-center gap-2 rounded-md border border-neutral-200 bg-neutral-50/70 py-2.5 px-4 text-xs font-semibold text-neutral-900 hover:bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-950/40 dark:text-white dark:hover:bg-neutral-800 transition-colors shadow-sm cursor-pointer"
+          >
+            <Icon name="github-logo" weight="bold" class="w-4 h-4" />
+            <span>Auto Sign-in as @ishara-madu</span>
+          </a>
+
+          <p class="text-[10px] text-neutral-400 dark:text-neutral-500">
+            Requires local git credentials or Cloudflare <span class="font-mono">GITHUB_TOKEN</span> variable.
+          </p>
+        </div>
       </div>
     </div>
 

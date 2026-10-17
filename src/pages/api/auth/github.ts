@@ -25,11 +25,13 @@ function getGitCredentialToken(): string | null {
   return null;
 }
 
-export const GET: APIRoute = async ({ request, redirect }) => {
+export const GET: APIRoute = async ({ request, redirect, locals }) => {
   const url = new URL(request.url);
+  const runtimeEnv = (locals as any)?.runtime?.env || {};
 
-  // 1. Try finding token from local git credentials, environment, or request
+  // 1. Try finding token from Cloudflare runtime env, process.env, import.meta.env, or local git credentials
   const token =
+    runtimeEnv.GITHUB_TOKEN ||
     process.env.GITHUB_TOKEN ||
     import.meta.env.GITHUB_TOKEN ||
     getGitCredentialToken();
@@ -143,6 +145,19 @@ export const GET: APIRoute = async ({ request, redirect }) => {
     }
   }
 
-  // Fallback: If no token was found, redirect to admin with prompt
+  // 2. If no server token, check if GitHub OAuth App credentials are configured
+  const clientId =
+    runtimeEnv.GITHUB_CLIENT_ID ||
+    process.env.GITHUB_CLIENT_ID ||
+    import.meta.env.GITHUB_CLIENT_ID;
+
+  if (clientId) {
+    const redirectUri = `${url.origin}/api/auth/callback`;
+    return redirect(
+      `https://github.com/login/oauth/authorize?client_id=${encodeURIComponent(clientId)}&scope=repo&redirect_uri=${encodeURIComponent(redirectUri)}`
+    );
+  }
+
+  // 3. Fallback: If no server-side token or OAuth app is configured, redirect to admin with prompt
   return redirect('/admin?needs_token=1');
 };

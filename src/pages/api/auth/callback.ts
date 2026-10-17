@@ -2,7 +2,7 @@ import type { APIRoute } from 'astro';
 
 export const prerender = false;
 
-export const GET: APIRoute = async ({ request, redirect }) => {
+export const GET: APIRoute = async ({ request, redirect, locals }) => {
   const url = new URL(request.url);
   const code = url.searchParams.get('code');
   const error = url.searchParams.get('error');
@@ -14,14 +14,15 @@ export const GET: APIRoute = async ({ request, redirect }) => {
     );
   }
 
-  const clientId = process.env.GITHUB_CLIENT_ID || import.meta.env.GITHUB_CLIENT_ID;
-  const clientSecret = process.env.GITHUB_CLIENT_SECRET || import.meta.env.GITHUB_CLIENT_SECRET;
-  const configuredOwner = (process.env.GITHUB_OWNER || import.meta.env.GITHUB_OWNER || '').trim();
-  const configuredRepo = (process.env.GITHUB_REPO || import.meta.env.GITHUB_REPO || 'blog').trim();
-  const configuredBranch = (process.env.GITHUB_BRANCH || import.meta.env.GITHUB_BRANCH || 'main').trim();
+  const runtimeEnv = (locals as any)?.runtime?.env || {};
+  const clientId = runtimeEnv.GITHUB_CLIENT_ID || process.env.GITHUB_CLIENT_ID || import.meta.env.GITHUB_CLIENT_ID;
+  const clientSecret = runtimeEnv.GITHUB_CLIENT_SECRET || process.env.GITHUB_CLIENT_SECRET || import.meta.env.GITHUB_CLIENT_SECRET;
+  const configuredOwner = (runtimeEnv.GITHUB_OWNER || process.env.GITHUB_OWNER || import.meta.env.GITHUB_OWNER || 'ishara-madu').trim();
+  const configuredRepo = (runtimeEnv.GITHUB_REPO || process.env.GITHUB_REPO || import.meta.env.GITHUB_REPO || 'blog').trim();
+  const configuredBranch = (runtimeEnv.GITHUB_BRANCH || process.env.GITHUB_BRANCH || import.meta.env.GITHUB_BRANCH || 'main').trim();
 
   if (!clientId || !clientSecret) {
-    return redirect('/admin?error=Missing+GitHub+OAuth+App+credentials+in+.env');
+    return redirect('/admin?error=Missing+GitHub+OAuth+App+credentials');
   }
 
   try {
